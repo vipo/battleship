@@ -10,11 +10,13 @@ import qualified Interface as I
 import Control.Monad.IO.Class
 
 import Data.Aeson()
+import qualified Data.Maybe as Maybe
 import qualified Data.Text as T
 import GHC.Generics
 import GHC.TypeLits
 import Network.Wai.Handler.Warp
 import Servant
+import System.Random
 import TextShow 
 
 import Web.HttpApiData
@@ -26,13 +28,13 @@ instance FromHttpApiData I.GameVariation where
   parseUrlPiece a = Left $ T.concat ["Unknown game: ", showt a]
 
 type API =
-  "game" :> Capture "variation" I.GameVariation :> "arbitrary" :> Get '[JSON] I.NestedMoves
+  "game" :> Capture "variation" I.GameVariation :> "arbitrary" :> QueryParam "seed" Integer :> Get '[JSON] I.NestedMoves
 
 server :: Server API
-server = arbitrary
+server = nested
   where
-    arbitrary :: I.GameVariation -> Handler I.NestedMoves
-    arbitrary = liftIO . D.arbitraryGame
+    nested :: I.GameVariation -> Maybe Integer -> Handler I.NestedMoves
+    nested variation seed = liftIO $ D.arbitraryGame variation seed 
 
 api :: Proxy API
 api = Proxy
