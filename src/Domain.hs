@@ -2,8 +2,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Domain (
-  arbitraryGame
+  arbitraryGame, asListsOnly, asMapsOnly
 ) where
+
+import qualified Data.Aeson.Types as A
 
 import qualified Interface as I
 import qualified GHC.Generics as Gen
@@ -19,7 +21,7 @@ instance Show Row where
 type Coordinates = (Column, Row) 
 
 data Game = Game {
-  firstAttack :: Coordinates
+    firstAttack :: Coordinates
   , replies :: [Move]
 }
 
@@ -28,20 +30,26 @@ data Move =
   | LastReply I.MoveResult
   deriving Gen.Generic
 
-toNestedMoves :: Game -> I.NestedMoves
-toNestedMoves (Game c r) = toNestedMoves' (reverse r) (I.NestedMoves (mapCoord c) Nothing Nothing)
-
-toNestedMoves' :: [Move] -> I.NestedMoves -> I.NestedMoves
-toNestedMoves' [] acc = acc
-toNestedMoves' (ReplyAndAttack c res : t) acc = toNestedMoves' t (I.NestedMoves (mapCoord c) (Just res) (Just acc))
-toNestedMoves' (LastReply res : _) acc = I.NestedMoves [] (Just res) (Just acc)
-
-mapCoord :: (Column, Row) -> [String]
-mapCoord (c, r) = [show c, show r]
-
 type Seed = Integer
 
-arbitraryGame :: I.GameVariation -> Maybe Seed -> IO I.NestedMoves
+arbitraryGame :: I.GameVariation -> Maybe Seed -> IO I.Moves
 arbitraryGame _ _ = return $ toNestedMoves some
   where
     some = Game (A, R1) [ReplyAndAttack (C, R3) I.Miss, ReplyAndAttack (B, R2) I.Miss]
+    
+    toNestedMoves :: Game -> I.Moves
+    toNestedMoves (Game c r) = toNestedMoves' (reverse r) (I.Moves (mapCoord c) Nothing Nothing)
+
+    toNestedMoves' :: [Move] -> I.Moves -> I.Moves
+    toNestedMoves' [] acc = acc
+    toNestedMoves' (ReplyAndAttack c res : t) acc = toNestedMoves' t (I.Moves (mapCoord c) (Just res) (Just acc))
+    toNestedMoves' (LastReply res : _) acc = I.Moves [] (Just res) (Just acc)
+
+    mapCoord :: (Column, Row) -> [String]
+    mapCoord (c, r) = [show c, show r]
+
+asListsOnly :: A.Value -> A.Value
+asListsOnly a = a
+
+asMapsOnly :: A.Value -> A.Value
+asMapsOnly a = a

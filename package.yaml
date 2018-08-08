@@ -32,6 +32,7 @@ executables:
     dependencies:
     - battleship
     - http-api-data
+    - http-media
     - random
     - servant
     - servant-server

@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 
 module Interface (
-  NestedMoves(..), MoveResult(..), GameVariation(..)
+  Moves(..), MoveResult(..), GameVariation(..)
 ) where
 
 import Data.Aeson.Types
@@ -16,9 +16,11 @@ data MoveResult = Miss | Hit | Sank
   deriving (Eq, Show, Gen.Generic)
 instance ToJSON MoveResult
 
-data NestedMoves = NestedMoves {
+data Moves = Moves {
   coord :: [String]
   , result :: Maybe MoveResult
-  , prev :: Maybe NestedMoves
+  , prev :: Maybe Moves
 } deriving Gen.Generic
-instance ToJSON NestedMoves
+instance ToJSON Moves
+
+
