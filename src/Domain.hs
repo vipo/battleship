@@ -1,11 +1,15 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE StrictData #-}
 
 module Domain (
-  arbitraryGame, asListsOnly, asMapsOnly
+  arbitraryGame, withOutLists, withOutMaps
 ) where
 
 import qualified Data.Aeson.Types as A
+
+import qualified Data.HashMap.Strict as HMS
+import qualified Data.Vector as V
 
 import qualified Interface as I
 import qualified GHC.Generics as Gen
@@ -48,8 +52,9 @@ arbitraryGame _ _ = return $ toNestedMoves some
     mapCoord :: (Column, Row) -> [String]
     mapCoord (c, r) = [show c, show r]
 
-asListsOnly :: A.Value -> A.Value
-asListsOnly a = a
+withOutLists :: A.Value -> A.Value
+withOutLists a = a
 
-asMapsOnly :: A.Value -> A.Value
-asMapsOnly a = a
+withOutMaps :: A.Value -> A.Value
+withOutMaps (A.Object m) = A.Array $ V.fromList $ map (\(k, v) -> A.Array (V.fromList [A.String k, withOutMaps v])) (HMS.toList m)
+withOutMaps a = a

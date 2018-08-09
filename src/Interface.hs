@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE StrictData #-}
 
 module Interface (
   Moves(..), MoveResult(..), GameVariation(..)
@@ -12,9 +14,11 @@ import qualified GHC.Generics as Gen
 
 data GameVariation = Classic | Tetris | TShape
 
-data MoveResult = Miss | Hit | Sank
+data MoveResult = Miss | Hit
   deriving (Eq, Show, Gen.Generic)
-instance ToJSON MoveResult
+instance ToJSON MoveResult where
+  toJSON Miss = String "MISS"
+  toJSON Hit = String "HIT"
 
 data Moves = Moves {
   coord :: [String]

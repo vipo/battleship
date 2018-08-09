@@ -5,6 +5,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE StrictData #-}
 
 module Main where
 
@@ -32,20 +33,20 @@ instance FromHttpApiData I.GameVariation where
   parseUrlPiece "t-shapes" = Right I.TShape
   parseUrlPiece a = Left $ T.concat ["Unknown game: ", showt a]
 
-data JSONList
-instance Accept JSONList where
-  contentType _ = "application" // "json+list"
-instance ToJSON a => MimeRender JSONList a where
-  mimeRender _ = encode . D.asListsOnly . toJSON
+data JSONNoLists
+instance Accept JSONNoLists where
+  contentType _ = "application" // "json+nolists"
+instance ToJSON a => MimeRender JSONNoLists a where
+  mimeRender _ = encode . D.withOutLists . toJSON
   
-data JSONMap
-instance Accept JSONMap where
-  contentType _ = "application" // "json+map"
-instance ToJSON a => MimeRender JSONMap a where
-  mimeRender _ = encode . D.asMapsOnly . toJSON
+data JSONNoMaps
+instance Accept JSONNoMaps where
+  contentType _ = "application" // "json+nomaps"
+instance ToJSON a => MimeRender JSONNoMaps a where
+  mimeRender _ = encode . D.withOutMaps . toJSON
 
 type API =
-  "game" :> Capture "variation" I.GameVariation :> "arbitrary" :> QueryParam "seed" Integer :> Get '[JSON, JSONList, JSONMap] I.Moves
+  "game" :> Capture "variation" I.GameVariation :> "arbitrary" :> QueryParam "seed" Integer :> Get '[JSON, JSONNoLists, JSONNoMaps] I.Moves
 
 server :: Server API
 server = arbitrary

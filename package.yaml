@@ -17,6 +17,8 @@ dependencies:
 - aeson
 - scientific
 - text-show
+- unordered-containers
+- vector
 
 library:
   source-dirs: src
