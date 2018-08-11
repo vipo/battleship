@@ -52,3 +52,6 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - battleship
+    - tasty
+    - tasty-hunit
+    - tasty-quickcheck

@@ -14,6 +14,8 @@ import qualified Data.Vector as V
 import qualified Interface as I
 import qualified GHC.Generics as Gen
 
+import qualified TextShow as TS
+
 data Column = A | B | C | D | E | F | G | H | J | I
   deriving Show
 
@@ -53,8 +55,11 @@ arbitraryGame _ _ = return $ toNestedMoves some
     mapCoord (c, r) = [show c, show r]
 
 withOutLists :: A.Value -> A.Value
+withOutLists (A.Object m) = A.Object $ HMS.map withOutLists m
+withOutLists (A.Array v) = A.Object $ HMS.fromList $ zip (map TS.showt ([1 .. ] :: [Integer])) (V.toList v)
 withOutLists a = a
 
 withOutMaps :: A.Value -> A.Value
-withOutMaps (A.Object m) = A.Array $ V.fromList $ map (\(k, v) -> A.Array (V.fromList [A.String k, withOutMaps v])) (HMS.toList m)
+withOutMaps (A.Object m) = A.Array $ V.fromList $ concatMap (\(k, v) -> [A.String k, withOutMaps v]) (HMS.toList m)
+withOutMaps (A.Array v) = A.Array $ V.map withOutMaps v
 withOutMaps a = a
