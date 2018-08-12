@@ -12,7 +12,7 @@ import Interface
 instance BEncode MoveResult where
   toBEncode Miss = BString "MISS"
   toBEncode Hit = BString "HIT"
-  fromBEncode _ = error "Not Implemented"
+  fromBEncode _ = Left "Not Implemented"
 
 instance BEncode Moves where
   toBEncode Moves {..} = toDict $
@@ -20,5 +20,5 @@ instance BEncode Moves where
       "prev" .=? prev .:
       "result" .=? result .:
       endDict
-  fromBEncode _ = error "Not Implemented"
+  fromBEncode _ = Left "Not Implemented"
   

@@ -40,13 +40,13 @@ data JSONNoLists
 instance Accept JSONNoLists where
   contentType _ = "application" // "json+nolists"
 instance A.ToJSON a => MimeRender JSONNoLists a where
-  mimeRender _ = A.encode . D.withOutLists . A.toJSON
+  mimeRender _ = A.encode . I.withOutLists . A.toJSON
   
 data JSONNoMaps
 instance Accept JSONNoMaps where
   contentType _ = "application" // "json+nomaps"
 instance A.ToJSON a => MimeRender JSONNoMaps a where
-  mimeRender _ = A.encode . D.withOutMaps . A.toJSON
+  mimeRender _ = A.encode . I.withOutMaps . A.toJSON
 
 data Bencoding
 instance Accept Bencoding where

@@ -3,13 +3,8 @@
 {-# LANGUAGE StrictData #-}
 
 module Domain (
-  arbitraryGame, withOutLists, withOutMaps
+  arbitraryGame, toNestedMoves, Column(..), Row(..), Move(..), Game(..)
 ) where
-
-import qualified Data.Aeson.Types as A
-
-import qualified Data.HashMap.Strict as HMS
-import qualified Data.Vector as V
 
 import qualified Interface as I
 import qualified GHC.Generics as Gen
@@ -46,9 +41,9 @@ arbitraryGame _ _ = return $ toNestedMoves some
   where
     some = Game (A, R1) [ReplyAndAttack (C, R3) I.Miss, ReplyAndAttack (B, R2) I.Miss]
     
-    toNestedMoves :: Game -> I.Moves
-    toNestedMoves (Game c r) = toNestedMoves' (reverse r) (I.Moves (mapCoord c) Nothing Nothing)
-
+toNestedMoves :: Game -> I.Moves
+toNestedMoves (Game c r) = toNestedMoves' (reverse r) (I.Moves (mapCoord c) Nothing Nothing)
+  where
     toNestedMoves' :: [Move] -> I.Moves -> I.Moves
     toNestedMoves' [] acc = acc
     toNestedMoves' (ReplyAndAttack c res : t) acc = toNestedMoves' t (I.Moves (mapCoord c) (Just res) (Just acc))
@@ -56,13 +51,3 @@ arbitraryGame _ _ = return $ toNestedMoves some
 
     mapCoord :: (Column, Row) -> [T.Text]
     mapCoord (c, r) = [cs (show c), cs (show r)]
-
-withOutLists :: A.Value -> A.Value
-withOutLists (A.Object m) = A.Object $ HMS.map withOutLists m
-withOutLists (A.Array v) = A.Object $ HMS.fromList $ zip (map TS.showt ([1 .. ] :: [Integer])) (map withOutLists (V.toList v))
-withOutLists a = a
-
-withOutMaps :: A.Value -> A.Value
-withOutMaps (A.Object m) = A.Array $ V.fromList $ concatMap (\(k, v) -> [A.String k, withOutMaps v]) (HMS.toList m)
-withOutMaps (A.Array v) = A.Array $ V.map withOutMaps v
-withOutMaps a = a
