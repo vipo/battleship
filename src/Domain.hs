@@ -14,7 +14,10 @@ import qualified Data.Vector as V
 import qualified Interface as I
 import qualified GHC.Generics as Gen
 
+import qualified Data.Text as T
 import qualified TextShow as TS
+
+import Data.String.Conversions
 
 data Column = A | B | C | D | E | F | G | H | J | I
   deriving Show
@@ -51,8 +54,8 @@ arbitraryGame _ _ = return $ toNestedMoves some
     toNestedMoves' (ReplyAndAttack c res : t) acc = toNestedMoves' t (I.Moves (mapCoord c) (Just res) (Just acc))
     toNestedMoves' (LastReply res : _) acc = I.Moves [] (Just res) (Just acc)
 
-    mapCoord :: (Column, Row) -> [String]
-    mapCoord (c, r) = [show c, show r]
+    mapCoord :: (Column, Row) -> [T.Text]
+    mapCoord (c, r) = [cs (show c), cs (show r)]
 
 withOutLists :: A.Value -> A.Value
 withOutLists (A.Object m) = A.Object $ HMS.map withOutLists m

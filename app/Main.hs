@@ -11,10 +11,13 @@ module Main where
 
 import qualified Domain as D
 import qualified Interface as I
+import Json
+import Bencoding
 
 import Control.Monad.IO.Class
 
-import Data.Aeson(ToJSON, encode, toJSON)
+import qualified Data.Aeson as A
+import qualified Data.BEncode as B
 import qualified Data.Maybe as Maybe
 import qualified Data.Text as T
 import GHC.Generics
@@ -36,17 +39,24 @@ instance FromHttpApiData I.GameVariation where
 data JSONNoLists
 instance Accept JSONNoLists where
   contentType _ = "application" // "json+nolists"
-instance ToJSON a => MimeRender JSONNoLists a where
-  mimeRender _ = encode . D.withOutLists . toJSON
+instance A.ToJSON a => MimeRender JSONNoLists a where
+  mimeRender _ = A.encode . D.withOutLists . A.toJSON
   
 data JSONNoMaps
 instance Accept JSONNoMaps where
   contentType _ = "application" // "json+nomaps"
-instance ToJSON a => MimeRender JSONNoMaps a where
-  mimeRender _ = encode . D.withOutMaps . toJSON
+instance A.ToJSON a => MimeRender JSONNoMaps a where
+  mimeRender _ = A.encode . D.withOutMaps . A.toJSON
+
+data Bencoding
+instance Accept Bencoding where
+  contentType _ = "application" // "bencoding"
+instance B.BEncode a => MimeRender Bencoding a where
+  mimeRender _ = B.encode . B.toBEncode
 
 type API =
-  "game" :> Capture "variation" I.GameVariation :> "arbitrary" :> QueryParam "seed" Integer :> Get '[JSON, JSONNoLists, JSONNoMaps] I.Moves
+  "game" :> Capture "variation" I.GameVariation :> "arbitrary" :> QueryParam "seed" Integer :>
+    Get '[JSON, JSONNoLists, JSONNoMaps, Bencoding] I.Moves
 
 server :: Server API
 server = arbitrary
