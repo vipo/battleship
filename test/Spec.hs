@@ -18,11 +18,26 @@ tests :: TestTree
 tests = testGroup "BattleShip Specification" [json]
 
 json :: TestTree
-json = testGroup "Json" [
-  testCase "Eliminates root maps" $ 
+json = testGroup "Json" [jsonNoMaps, jsonNoLists]
+
+jsonNoMaps :: TestTree
+jsonNoMaps = testGroup "Eliminate maps" [
+  testCase "root" $ 
     D.withOutMaps (A.object [("a", A.emptyArray), ("b", A.String "b")]) @?=
-      (A.Array $ V.fromList [A.String "a", A.emptyArray, A.String "b", A.String "b"]),
-  testCase "Eliminates nested maps" $
-    D.withOutMaps (A.Array $ V.fromList [A.object [("b", A.String "b")], A.String "a"]) @?=
-      (A.Array $ V.fromList [A.Array $ V.fromList [A.String "b", A.String "b"], A.String "a"])]
-	  
+      jarray [A.String "a", A.emptyArray, A.String "b", A.String "b"],
+  testCase "nested" $
+    D.withOutMaps (jarray [A.object [("b", A.String "b")], A.String "a"]) @?=
+      jarray [jarray [A.String "b", A.String "b"], A.String "a"]]
+
+jsonNoLists :: TestTree
+jsonNoLists = testGroup "Eliminate lists" [
+  testCase "root" $ 
+    D.withOutLists (jarray [A.emptyArray, A.String "b"]) @?=
+      A.object [("1", A.object []), ("2", A.String "b")],
+  testCase "nested" $
+    D.withOutLists (A.object [("b", A.String "b"), ("a", jarray[A.String "a", A.String "b"])]) @?=
+      A.object [("b", A.String "b"), ("a", A.object[("1", A.String "a"), ("2", A.String "b")])]]
+
+
+jarray :: [A.Value] -> A.Value
+jarray = A.Array . V.fromList

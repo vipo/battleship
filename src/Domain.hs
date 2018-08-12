@@ -56,7 +56,7 @@ arbitraryGame _ _ = return $ toNestedMoves some
 
 withOutLists :: A.Value -> A.Value
 withOutLists (A.Object m) = A.Object $ HMS.map withOutLists m
-withOutLists (A.Array v) = A.Object $ HMS.fromList $ zip (map TS.showt ([1 .. ] :: [Integer])) (V.toList v)
+withOutLists (A.Array v) = A.Object $ HMS.fromList $ zip (map TS.showt ([1 .. ] :: [Integer])) (map withOutLists (V.toList v))
 withOutLists a = a
 
 withOutMaps :: A.Value -> A.Value
