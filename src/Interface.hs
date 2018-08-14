@@ -3,6 +3,7 @@
 {-# LANGUAGE StrictData #-}
 
 module Interface (
+  JsonLike(..), JsonLikeValue(..),
   Moves(..), MoveResult(..), GameVariation(..), 
   withOutLists, withOutMaps
 ) where
@@ -29,6 +30,12 @@ data Moves = Moves {
   , result :: Maybe MoveResult
   , prev :: Maybe Moves
 } deriving (Gen.Generic, Show, Eq)
+
+data JsonLikeValue a = JLMap [(Text, JsonLikeValue a)] | JLArray [JsonLikeValue a] | JLRaw a
+
+class JsonLike a where
+  toJsonLike :: a -> JsonLikeValue a
+--  fromJsonLike :: JsonLikeValue a -> a 
 
 withOutLists :: A.Value -> A.Value
 withOutLists (A.Object m) = A.Object $ HMS.map withOutLists m

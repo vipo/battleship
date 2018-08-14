@@ -22,7 +22,10 @@ main :: IO ()
 main = defaultMain tests
 
 tests :: TestTree
-tests = testGroup "BattleShip Specification" [common, json]
+tests = testGroup "BattleShip Specification" [common, json, bencode]
+
+bencode :: TestTree
+bencode = testGroup "Bencode" [bencodeNoMaps, bencodeNoLists]
 
 json :: TestTree
 json = testGroup "Json" [jsonNoMaps, jsonNoLists]
@@ -44,9 +47,9 @@ common :: TestTree
 common = testGroup "Smoke test" [
   testCase "map domain to interface" $ 
     D.toNestedMoves someGame @?= someGameI,
-  testCase "renders json" $
+  testCase "renders default json" $
     Aeson.encode someGameI @?= "{\"coord\":[\"C\",\"3\"],\"result\":\"HIT\",\"prev\":{\"coord\":[\"B\",\"2\"],\"result\":\"MISS\",\"prev\":{\"coord\":[\"A\",\"1\"],\"result\":null,\"prev\":null}}}",
-  testCase "renders bencode" $
+  testCase "renders default bencode" $
     Ben.encode someGameI @?= "d5:coordl1:C1:3e4:prevd5:coordl1:B1:2e4:prevd5:coordl1:A1:1ee6:result4:MISSe6:result3:HITe"]
 
 jsonNoMaps :: TestTree
@@ -67,6 +70,23 @@ jsonNoLists = testGroup "Eliminate lists" [
     I.withOutLists (A.object [("b", A.String "b"), ("a", jarray[A.String "a", A.String "b"])]) @?=
       A.object [("b", A.String "b"), ("a", A.object[("1", A.String "a"), ("2", A.String "b")])]]
 
+bencodeNoMaps :: TestTree
+bencodeNoMaps = testGroup "Eliminate maps" [
+  testCase "root" $ 
+    I.withOutMaps (A.object [("a", A.emptyArray), ("b", A.String "b")]) @?=
+      jarray [A.String "a", A.emptyArray, A.String "b", A.String "b"],
+  testCase "nested" $
+    I.withOutMaps (jarray [A.object [("b", A.String "b")], A.String "a"]) @?=
+      jarray [jarray [A.String "b", A.String "b"], A.String "a"]]
 
+bencodeNoLists :: TestTree
+bencodeNoLists = testGroup "Eliminate lists" [
+  testCase "root" $ 
+    I.withOutLists (jarray [A.emptyArray, A.String "b"]) @?=
+      A.object [("1", A.object []), ("2", A.String "b")],
+  testCase "nested" $
+    I.withOutLists (A.object [("b", A.String "b"), ("a", jarray[A.String "a", A.String "b"])]) @?=
+      A.object [("b", A.String "b"), ("a", A.object[("1", A.String "a"), ("2", A.String "b")])]]
+      
 jarray :: [A.Value] -> A.Value
 jarray = A.Array . V.fromList
