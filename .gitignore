@@ -1,4 +1,5 @@
 .stack-work/
 .vscode/
-battleship.cabal
-*~
+elm/elm-package.json
+elm/elm-stuff/
+elm/index.html

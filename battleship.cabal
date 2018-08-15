@@ -1,0 +1,138 @@
+-- This file has been generated from package.yaml by hpack version 0.21.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: f31cba82e69ea740232e72b8e4217bf1bf5777521724cd437e78117f76cc6149
+
+name:           battleship
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/vipo/battleship#readme>
+homepage:       https://github.com/vipo/battleship#readme
+bug-reports:    https://github.com/vipo/battleship/issues
+author:         Viaceslav Pozdniakov
+maintainer:     pi@homedir.eu
+copyright:      2018 Viaceslav Pozdniakov
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+cabal-version:  >= 1.10
+
+extra-source-files:
+    ChangeLog.md
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/vipo/battleship
+
+library
+  exposed-modules:
+      ApiTypes
+      Bencoding
+      Domain
+      Interface
+      Json
+  other-modules:
+      Paths_battleship
+  hs-source-dirs:
+      src
+  build-depends:
+      aeson
+    , base >=4.7 && <5
+    , bencoding
+    , bytestring
+    , http-api-data
+    , http-media
+    , scientific
+    , servant
+    , servant-server
+    , string-conversions
+    , text
+    , text-show
+    , unordered-containers
+    , vector
+  default-language: Haskell2010
+
+executable battleship
+  main-is: Main.hs
+  other-modules:
+      Paths_battleship
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      aeson
+    , base >=4.7 && <5
+    , battleship
+    , bencoding
+    , bytestring
+    , http-api-data
+    , http-media
+    , random
+    , scientific
+    , servant
+    , servant-server
+    , string-conversions
+    , text
+    , text-show
+    , unordered-containers
+    , vector
+    , wai
+    , warp
+  default-language: Haskell2010
+
+executable battleship-gen-elm
+  main-is: Main.hs
+  other-modules:
+      Paths_battleship
+  hs-source-dirs:
+      gen-elm
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      aeson
+    , base >=4.7 && <5
+    , battleship
+    , bencoding
+    , bytestring
+    , elm-export
+    , http-api-data
+    , http-media
+    , scientific
+    , servant
+    , servant-elm
+    , servant-server
+    , string-conversions
+    , text
+    , text-show
+    , unordered-containers
+    , vector
+  default-language: Haskell2010
+
+test-suite battleship-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_battleship
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      aeson
+    , base >=4.7 && <5
+    , battleship
+    , bencoding
+    , bytestring
+    , http-api-data
+    , http-media
+    , scientific
+    , servant
+    , servant-server
+    , string-conversions
+    , tasty
+    , tasty-hunit
+    , tasty-quickcheck
+    , text
+    , text-show
+    , unordered-containers
+    , vector
+  default-language: Haskell2010

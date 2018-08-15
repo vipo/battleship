@@ -34,7 +34,7 @@ data Move =
   | LastReply I.MoveResult
   deriving Gen.Generic
 
-type Seed = Integer
+type Seed = Int
 
 arbitraryGame :: I.GameVariation -> Maybe Seed -> IO I.Moves
 arbitraryGame _ _ = return $ toNestedMoves some

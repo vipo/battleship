@@ -22,6 +22,7 @@ import qualified Data.Text as T
 import qualified TextShow as TS
 
 data GameVariation = Classic | Tetris | TShape
+  deriving (Gen.Generic)
 
 data MoveResult = Miss | Hit
   deriving (Eq, Show, Gen.Generic)
