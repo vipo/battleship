@@ -8,12 +8,14 @@ import           Test.Tasty.QuickCheck as QC
 
 import qualified Domain as D
 import qualified Interface as I
-import Json
-import Bencoding
+import Json as J
+import Bencoding as B
 
 import qualified Data.Aeson.Types as A
 import qualified Data.Aeson as Aeson
 import qualified Data.BEncode as Ben
+import qualified Data.BEncode.BDict as BDict
+import qualified Data.ByteString as BS
 import qualified Data.Vector as V
 
 import Data.String.Conversions
@@ -50,43 +52,54 @@ common = testGroup "Smoke test" [
   testCase "renders default json" $
     Aeson.encode someGameI @?= "{\"coord\":[\"C\",\"3\"],\"result\":\"HIT\",\"prev\":{\"coord\":[\"B\",\"2\"],\"result\":\"MISS\",\"prev\":{\"coord\":[\"A\",\"1\"],\"result\":null,\"prev\":null}}}",
   testCase "renders default bencode" $
-    Ben.encode someGameI @?= "d5:coordl1:C1:3e4:prevd5:coordl1:B1:2e4:prevd5:coordl1:A1:1ee6:result4:MISSe6:result3:HITe"]
+    Ben.encode someGameI @?= "d5:coordl1:C1:3e4:prevd5:coordl1:B1:2e4:prevd5:coordl1:A1:1ee6:result4:MISSe6:result3:HITe"
+  ]
 
 jsonNoMaps :: TestTree
 jsonNoMaps = testGroup "Eliminate maps" [
   testCase "root" $ 
-    I.withOutMaps (A.object [("a", A.emptyArray), ("b", A.String "b")]) @?=
+    J.withOutMaps (A.object [("a", A.emptyArray), ("b", A.String "b")]) @?=
       jarray [A.String "a", A.emptyArray, A.String "b", A.String "b"],
   testCase "nested" $
-    I.withOutMaps (jarray [A.object [("b", A.String "b")], A.String "a"]) @?=
-      jarray [jarray [A.String "b", A.String "b"], A.String "a"]]
+    J.withOutMaps (jarray [A.object [("b", A.String "b")], A.String "a"]) @?=
+      jarray [jarray [A.String "b", A.String "b"], A.String "a"]
+  ]
 
 jsonNoLists :: TestTree
 jsonNoLists = testGroup "Eliminate lists" [
   testCase "root" $ 
-    I.withOutLists (jarray [A.emptyArray, A.String "b"]) @?=
+    J.withOutLists (jarray [A.emptyArray, A.String "b"]) @?=
       A.object [("1", A.object []), ("2", A.String "b")],
   testCase "nested" $
-    I.withOutLists (A.object [("b", A.String "b"), ("a", jarray[A.String "a", A.String "b"])]) @?=
-      A.object [("b", A.String "b"), ("a", A.object[("1", A.String "a"), ("2", A.String "b")])]]
+    J.withOutLists (A.object [("b", A.String "b"), ("a", jarray[A.String "a", A.String "b"])]) @?=
+      A.object [("b", A.String "b"), ("a", A.object[("1", A.String "a"), ("2", A.String "b")])]
+  ]
 
 bencodeNoMaps :: TestTree
 bencodeNoMaps = testGroup "Eliminate maps" [
   testCase "root" $ 
-    I.withOutMaps (A.object [("a", A.emptyArray), ("b", A.String "b")]) @?=
-      jarray [A.String "a", A.emptyArray, A.String "b", A.String "b"],
+    B.withOutMaps (bmap [("a", Ben.BList []), ("b", Ben.BString "b")]) @?=
+      barray [Ben.BString "a", barray [], Ben.BString "b", Ben.BString "b"],
   testCase "nested" $
-    I.withOutMaps (jarray [A.object [("b", A.String "b")], A.String "a"]) @?=
-      jarray [jarray [A.String "b", A.String "b"], A.String "a"]]
+    B.withOutMaps (Ben.BList [bmap [("b", Ben.BString "b")], Ben.BString "a"]) @?=
+      barray [barray [Ben.BString "b", Ben.BString "b"], Ben.BString "a"]
+  ]
 
 bencodeNoLists :: TestTree
 bencodeNoLists = testGroup "Eliminate lists" [
   testCase "root" $ 
-    I.withOutLists (jarray [A.emptyArray, A.String "b"]) @?=
-      A.object [("1", A.object []), ("2", A.String "b")],
+    B.withOutLists (barray [barray [], Ben.BString "b"]) @?=
+      bmap [("1", bmap []), ("2", Ben.BString "b")],
   testCase "nested" $
-    I.withOutLists (A.object [("b", A.String "b"), ("a", jarray[A.String "a", A.String "b"])]) @?=
-      A.object [("b", A.String "b"), ("a", A.object[("1", A.String "a"), ("2", A.String "b")])]]
-      
+    B.withOutLists (bmap [("b", Ben.BString "b"), ("a", barray [Ben.BString "a", Ben.BString "b"])]) @?=
+      bmap [("b", Ben.BString "b"), ("a", bmap[("1", Ben.BString "a"), ("2", Ben.BString "b")])]
+  ]      
+
 jarray :: [A.Value] -> A.Value
 jarray = A.Array . V.fromList
+
+barray :: [Ben.BValue] -> Ben.BValue
+barray = Ben.BList
+
+bmap :: [(BS.ByteString, Ben.BValue)] -> Ben.BValue
+bmap a = Ben.BDict $ BDict.fromAscList a

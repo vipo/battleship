@@ -11,13 +11,13 @@ module Main where
 
 import qualified Domain as D
 import qualified Interface as I
-import Json
-import Bencoding
+import Json as J
+import Bencoding as B
 
 import Control.Monad.IO.Class
 
 import qualified Data.Aeson as A
-import qualified Data.BEncode as B
+import qualified Data.BEncode as Ben
 import qualified Data.Maybe as Maybe
 import qualified Data.Text as T
 import GHC.Generics
@@ -40,23 +40,35 @@ data JSONNoLists
 instance Accept JSONNoLists where
   contentType _ = "application" // "json+nolists"
 instance A.ToJSON a => MimeRender JSONNoLists a where
-  mimeRender _ = A.encode . I.withOutLists . A.toJSON
+  mimeRender _ = A.encode . J.withOutLists . A.toJSON
   
 data JSONNoMaps
 instance Accept JSONNoMaps where
   contentType _ = "application" // "json+nomaps"
 instance A.ToJSON a => MimeRender JSONNoMaps a where
-  mimeRender _ = A.encode . I.withOutMaps . A.toJSON
+  mimeRender _ = A.encode . J.withOutMaps . A.toJSON
 
 data Bencoding
 instance Accept Bencoding where
   contentType _ = "application" // "bencoding"
-instance B.BEncode a => MimeRender Bencoding a where
-  mimeRender _ = B.encode . B.toBEncode
+instance Ben.BEncode a => MimeRender Bencoding a where
+  mimeRender _ = Ben.encode . Ben.toBEncode
+
+data BencodingNoLists
+instance Accept BencodingNoLists where
+  contentType _ = "application" // "bencoding+nolists"
+instance Ben.BEncode a => MimeRender BencodingNoLists a where
+  mimeRender _ = Ben.encode . B.withOutLists . Ben.toBEncode
+
+data BencodingNoMaps
+instance Accept BencodingNoMaps where
+  contentType _ = "application" // "bencoding+nomaps"
+instance Ben.BEncode a => MimeRender BencodingNoMaps a where
+  mimeRender _ = Ben.encode . B.withOutMaps . Ben.toBEncode
 
 type API =
   "game" :> Capture "variation" I.GameVariation :> "arbitrary" :> QueryParam "seed" Integer :>
-    Get '[JSON, JSONNoLists, JSONNoMaps, Bencoding] I.Moves
+    Get '[JSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves
 
 server :: Server API
 server = arbitrary
