@@ -14,7 +14,7 @@ import qualified TextShow as TS
 
 import Data.String.Conversions
 
-data Column = A | B | C | D | E | F | G | H | J | I
+data Column = A | B | C | D | E | F | G | H | I | J
   deriving Show
 
 data Row = R1 | R2 | R3 | R4 | R5 | R6 | R7 | R8 | R9 | R10
