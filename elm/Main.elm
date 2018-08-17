@@ -3,6 +3,7 @@ import Html exposing (Html, Attribute, button, div, span, text, h2, table, tr,
 import Html.Attributes exposing(style, readonly, cols, rows, type_, checked)
 import Html.Events exposing (onClick)
 import Random
+import Http
 
 main : Program Never Model Msg
 main = Html.program {
@@ -39,14 +40,18 @@ emptyBoard : Board
 emptyBoard = List.repeat 10 (List.repeat 10 Empty)
 
 init : (Model, Cmd Msg)
-init = (Model emptyBoard emptyBoard "" Classical Json 0, Cmd.none)
+init = (Model emptyBoard emptyBoard "" Classical Json 0, genSeed)
 
 -- UPDATE
 
 type Msg = SwitchMsgType MsgType |
   SwitchGameType GameType |
   GenGame |
-  NewSeed Int
+  NewSeed Int |
+  SetRaw (Result Http.Error String)
+
+genSeed : Cmd Msg
+genSeed = Random.generate NewSeed (Random.int 1 32000)
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -56,10 +61,45 @@ update msg model =
     SwitchGameType newGameType ->
       ({ model | gameType = newGameType }, Cmd.none)
     GenGame ->
-      (model, Random.generate NewSeed (Random.int 1 32000))
-    NewSeed newSeed->
-      ({ model | seed = newSeed }, Cmd.none)
+      (model, genSeed)
+    NewSeed newSeed ->
+      let
+        newModel = { model | seed = newSeed }
+      in
+        (newModel, Http.send SetRaw (getRawContent newModel))
+    SetRaw result ->
+      case result of
+        Ok m -> ({ model | rawMessage = m}, Cmd.none)
+        Err m -> ({ model | rawMessage = toString m}, Cmd.none)
 
+msgTypeToContentType : MsgType -> String
+msgTypeToContentType msgType =
+  case msgType of
+    Json ->        "application/json"
+    JsonNoLists -> "application/json+nolists"
+    JsonNoMaps ->  "application/json+nomaps"
+    Bencoding ->        "application/bencoding"
+    BencodingNoLists -> "application/bencoding+nolists"
+    BencodingNoMaps ->  "application/bencoding+nomaps"
+
+gameTypeToUrl : GameType -> String
+gameTypeToUrl gameType =
+  case gameType of
+    Classical -> "classical"
+    Tetris ->    "tetris"
+    TShapes ->   "t-shapes"
+
+getRawContent : Model -> Http.Request String
+getRawContent model =
+  Http.request { 
+      method = "GET"
+    , headers = [Http.header "Accept" (msgTypeToContentType model.msgType)]
+    , url = "http://localhost:8080/game/" ++ gameTypeToUrl model.gameType ++ "/arbitrary?seed=" ++ toString (model.seed)
+    , body = Http.emptyBody
+    , expect = Http.expectString
+    , timeout = Nothing
+    , withCredentials = False
+    }
 
 -- VIEW
 

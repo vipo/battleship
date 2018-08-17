@@ -29,7 +29,7 @@ import TextShow
 import Web.HttpApiData
 
 instance FromHttpApiData I.GameVariation where
-  parseUrlPiece "classic" = Right I.Classic
+  parseUrlPiece "classical" = Right I.Classical
   parseUrlPiece "tetris" = Right I.Tetris
   parseUrlPiece "t-shapes" = Right I.TShape
   parseUrlPiece a = Left $ T.concat ["Unknown game: ", showt a]

@@ -21,7 +21,7 @@ import qualified GHC.Generics as Gen
 import qualified Data.Text as T
 import qualified TextShow as TS
 
-data GameVariation = Classic | Tetris | TShape
+data GameVariation = Classical | Tetris | TShape
   deriving (Gen.Generic)
 
 data MoveResult = Miss | Hit
