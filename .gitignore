@@ -2,4 +2,4 @@
 .vscode/
 elm/elm-package.json
 elm/elm-stuff/
-elm/index.html
+static/index.html

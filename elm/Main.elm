@@ -5,6 +5,8 @@ import Html.Events exposing (onClick)
 import Random
 import Http
 
+import Api exposing (Moves, decodeMoves)
+
 main : Program Never Model Msg
 main = Html.program {
     init = init
@@ -94,7 +96,7 @@ getRawContent model =
   Http.request { 
       method = "GET"
     , headers = [Http.header "Accept" (msgTypeToContentType model.msgType)]
-    , url = "http://localhost:8080/game/" ++ gameTypeToUrl model.gameType ++ "/arbitrary?seed=" ++ toString (model.seed)
+    , url = "/game/" ++ gameTypeToUrl model.gameType ++ "/arbitrary?seed=" ++ toString (model.seed)
     , body = Http.emptyBody
     , expect = Http.expectString
     , timeout = Nothing
@@ -166,6 +168,7 @@ view model =
         , gameTypeRadio model.gameType Tetris    "Tetris"
         , gameTypeRadio model.gameType TShapes   "T-shapes"
         ]
+      , span [] [text ("Seed: " ++ toString model.seed)]
       , button [ onClick GenGame ] [ text "Generate" ]
       ]
     ]

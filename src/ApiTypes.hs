@@ -74,5 +74,6 @@ instance Ben.BEncode a => MimeRender BencodingNoMaps a where
   mimeRender _ = Ben.encode . B.withOutMaps . Ben.toBEncode
 
 type API =
-  "game" :> Capture "variation" I.GameVariation :> "arbitrary" :> QueryParam "seed" Int :>
-    Get '[JSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves
+    "game" :> Capture "variation" I.GameVariation :> "arbitrary" :> QueryParam "seed" Int :>
+      Get '[JSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves
+   :<|> "static" :> Raw
