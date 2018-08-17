@@ -168,7 +168,9 @@ view model =
         , gameTypeRadio model.gameType Tetris    "Tetris"
         , gameTypeRadio model.gameType TShapes   "T-shapes"
         ]
-      , span [] [text ("Seed: " ++ toString model.seed)]
+      , div[] [
+        span [] [text ("Seed: " ++ toString model.seed)]
+        ]
       , button [ onClick GenGame ] [ text "Generate" ]
       ]
     ]

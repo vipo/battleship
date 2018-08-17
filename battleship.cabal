@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 4d93df86297441236ae78caad69fa82c5371908e91b38ae24562d7617efa95f7
+-- hash: 759c23329cc808bbafef980e98c036c6eefbdfe32f724091c4d2ee7173b7a329
 
 name:           battleship
 version:        0.1.0.0
@@ -82,33 +82,6 @@ executable battleship
     , vector
     , wai
     , warp
-  default-language: Haskell2010
-
-executable battleship-gen-elm
-  main-is: Main.hs
-  other-modules:
-      Paths_battleship
-  hs-source-dirs:
-      gen-elm
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
-  build-depends:
-      aeson
-    , base >=4.7 && <5
-    , battleship
-    , bencoding
-    , bytestring
-    , elm-export
-    , http-api-data
-    , http-media
-    , scientific
-    , servant
-    , servant-elm
-    , servant-server
-    , string-conversions
-    , text
-    , text-show
-    , unordered-containers
-    , vector
   default-language: Haskell2010
 
 test-suite battleship-test
