@@ -5,6 +5,8 @@ import Html.Events exposing (onClick)
 import Random
 import Http
 
+import Array
+
 import Api exposing (Moves, decodeMoves)
 
 main : Program Never Model Msg
@@ -27,7 +29,7 @@ type MsgType = Json |      JsonNoLists |      JsonNoMaps |
 
 type CellState = Empty | Hit Int | Miss Int
 
-type alias Board = List (List CellState)
+type alias Board = Array.Array (Array.Array CellState) -- col (row)
 
 type alias Model = {
     boardA : Board
@@ -39,7 +41,7 @@ type alias Model = {
 }
 
 emptyBoard : Board
-emptyBoard = List.repeat 10 (List.repeat 10 Empty)
+emptyBoard = Array.repeat 10 (Array.repeat 10 Empty)
 
 init : (Model, Cmd Msg)
 init = (Model emptyBoard emptyBoard "" Classical Json 0, genSeed)
@@ -50,7 +52,8 @@ type Msg = SwitchMsgType MsgType |
   SwitchGameType GameType |
   GenGame |
   NewSeed Int |
-  SetRaw (Result Http.Error String)
+  SetRaw (Result Http.Error String) |
+  SetBoards (Result Http.Error Api.Moves)
 
 genSeed : Cmd Msg
 genSeed = Random.generate NewSeed (Random.int 1 32000)
@@ -68,11 +71,18 @@ update msg model =
       let
         newModel = { model | seed = newSeed }
       in
-        (newModel, Http.send SetRaw (getRawContent newModel))
+        (newModel, Cmd.batch
+          [
+            Http.send SetRaw    (getRawContent newModel.msgType newModel.gameType newModel.seed Http.expectString),
+            Http.send SetBoards (getRawContent Json             newModel.gameType newModel.seed (Http.expectJson Api.decodeMoves))
+          ]
+        )
     SetRaw result ->
       case result of
         Ok m -> ({ model | rawMessage = m}, Cmd.none)
         Err m -> ({ model | rawMessage = toString m}, Cmd.none)
+    SetBoards result ->
+      (model, Cmd.none)
 
 msgTypeToContentType : MsgType -> String
 msgTypeToContentType msgType =
@@ -91,14 +101,14 @@ gameTypeToUrl gameType =
     Tetris ->    "tetris"
     TShapes ->   "t-shapes"
 
-getRawContent : Model -> Http.Request String
-getRawContent model =
+getRawContent : MsgType -> GameType -> Int -> Http.Expect a -> Http.Request a
+getRawContent msgType gameType seed expect =
   Http.request { 
       method = "GET"
-    , headers = [Http.header "Accept" (msgTypeToContentType model.msgType)]
-    , url = "/game/" ++ gameTypeToUrl model.gameType ++ "/arbitrary?seed=" ++ toString (model.seed)
+    , headers = [Http.header "Accept" (msgTypeToContentType msgType)]
+    , url = "/game/" ++ gameTypeToUrl gameType ++ "/arbitrary?seed=" ++ toString seed
     , body = Http.emptyBody
-    , expect = Http.expectString
+    , expect = expect
     , timeout = Nothing
     , withCredentials = False
     }
@@ -112,14 +122,6 @@ renderState s =
     Hit n -> span [style[("color","red")]] [text(toString(n))]
     Miss n -> span [style[("color","blue")]] [text(toString(n))]
 
-toTableRow : (String, List CellState) -> List (Html Msg)
-toTableRow (n, r) =
-  [ tr [tableStyle]
-    (
-    td [tableStyle] [text n] :: List.map (\h -> td [tableStyle][renderState h]) r
-    )
-  ]
-
 tableStyle : Attribute Msg
 tableStyle =
   style
@@ -128,14 +130,25 @@ tableStyle =
     , ("font-family", "monospace")
     ]
 
+safeGet : Board -> Int -> Int -> CellState
+safeGet b col row =
+  (Array.get col b) |> Maybe.andThen (Array.get row) |> Maybe.withDefault Empty
+
+toTableRow : Board -> Int -> List (Html Msg)
+toTableRow b row =
+  [ tr [tableStyle]
+    (
+    td [tableStyle] [row+1 |> toString |> text] :: List.map (\col -> td [tableStyle][renderState (safeGet b col row)]) (List.range 0 9)
+    )
+  ]
+
 renderTable : String -> Board -> Html Msg
 renderTable cap b =
   table [tableStyle] (
     (caption [] [text cap]) ::
     (List.map (\h -> td [tableStyle][text h]) [" ","A","B","C","D","E","F","G","H","I","J"] |> tr []) ::
-    (b 
-      |> List.map2 (,) ["1","2","3","4","5","6","7","8","9","10"]
-      |> List.concatMap toTableRow
+    (
+      List.range 0 9 |> List.concatMap (toTableRow b)
     )
   )
 
