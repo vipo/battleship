@@ -29,7 +29,7 @@ type MsgType = Json |      JsonNoLists |      JsonNoMaps |
 
 type CellState = Hit Int | Miss Int | Awaiting Int
 
-type alias Board = Dict.Dict (Int, Int) CellState -- (col, row)
+type alias Board = Dict.Dict (Char, Int) CellState
 
 type alias Model = {
     boardA : Board
@@ -89,7 +89,7 @@ update msg model =
 applyMoves : Model -> Moves -> Model
 applyMoves model moves =
   let
-    toList : Moves -> List (Maybe(Int, Int), Maybe Api.MoveResult) -> List (Maybe(Int, Int), Maybe Api.MoveResult)
+    toList : Moves -> List (Maybe(Char, Int), Maybe Api.MoveResult) -> List (Maybe(Char, Int), Maybe Api.MoveResult)
     toList (Api.Moves {coord, result, prev}) acc =
       case prev of
         Nothing -> acc
@@ -100,14 +100,14 @@ applyMoves model moves =
         Nothing -> Awaiting n
         Just Api.Miss -> Miss n
         Just Api.Hit -> Hit n
-    mapCoord : Maybe (Int, Int) -> (Int, Int)
-    mapCoord = Maybe.withDefault (-1, -1)
-    asListWithResults : List (Int, (Int, Int), CellState)
+    mapCoord : Maybe (Char, Int) -> (Char, Int)
+    mapCoord = Maybe.withDefault ('0', 0)
+    asListWithResults : List (Int, (Char, Int), CellState)
     asListWithResults = toList moves [] |> List.reverse |> List.indexedMap (\i (c, r) -> ((i+1), mapCoord c, mapResult (i+1) r))
     len = List.length asListWithResults
-    shifted : List (Int, (Int, Int), CellState)
-    shifted = List.drop 1 asListWithResults ++ [(len, (-1, -1), Awaiting len)]
-    final : List (Int, (Int, Int), CellState)
+    shifted : List (Int, (Char, Int), CellState)
+    shifted = List.drop 1 asListWithResults ++ [(len, ('0', 0), Awaiting len)]
+    final : List (Int, (Char, Int), CellState)
     final = List.map2 (\(n1, c1, _) (_, _, s2) -> (n1, c1, s2)) asListWithResults shifted
     (b1, b2) = List.foldl (\(n, c, s) (a1, a2) -> if n % 2 == 0 then (Dict.insert c s a1, a2) else (a1, Dict.insert c s a2)) (emptyBoard, emptyBoard) final
   in
@@ -160,11 +160,14 @@ tableStyle =
     , ("font-family", "monospace")
     ]
 
+colNames : List Char
+colNames = ['A','B','C','D','E','F','G','H','I','J']
+
 toTableRow : Board -> Int -> List (Html Msg)
 toTableRow b row =
   [ tr [tableStyle]
     (
-    td [tableStyle] [row+1 |> toString |> text] :: List.map (\col -> td [tableStyle][renderState (Dict.get (col, row) b)]) (List.range 0 9)
+    td [tableStyle] [row |> toString |> text] :: List.map (\col -> td [tableStyle][renderState (Dict.get (col, row) b)]) colNames
     )
   ]
 
@@ -172,9 +175,9 @@ renderTable : String -> Board -> Html Msg
 renderTable cap b =
   table [tableStyle] (
     (caption [] [text cap]) ::
-    (List.map (\h -> td [tableStyle][text h]) [" ","A","B","C","D","E","F","G","H","I","J"] |> tr []) ::
+    (List.map (\h -> td [tableStyle][text h]) (List.map String.fromChar (' '::colNames)) |> tr []) ::
     (
-      List.range 0 9 |> List.concatMap (toTableRow b)
+      List.range 1 10 |> List.concatMap (toTableRow b)
     )
   )
 
