@@ -38,13 +38,14 @@ type alias Model = {
   , gameType : GameType
   , msgType : MsgType
   , seed : Int
+  , errors : List (String)
 }
 
 emptyBoard : Board
 emptyBoard =  Dict.empty
 
 init : (Model, Cmd Msg)
-init = (Model emptyBoard emptyBoard "" Classical Json 0, genSeed)
+init = (Model emptyBoard emptyBoard "" Classical Json 0 [], genSeed)
 
 -- UPDATE
 
@@ -79,11 +80,11 @@ update msg model =
         )
     SetRaw result ->
       case result of
-        Err m -> ({ model | rawMessage = toString m}, Cmd.none)
+        Err m -> ({ model | errors = toString m :: model.errors}, Cmd.none)
         Ok m -> ({ model | rawMessage = m}, Cmd.none)
     SetBoards result ->
       case result of
-        Err m -> ({ model | rawMessage = toString m}, Cmd.none)
+        Err m -> ({ model | errors = toString m :: model.errors}, Cmd.none)
         Ok m -> (applyMoves model m, Cmd.none)
 
 applyMoves : Model -> Moves -> Model
@@ -92,7 +93,7 @@ applyMoves model moves =
     toList : Moves -> List (Maybe(Char, Int), Maybe Api.MoveResult) -> List (Maybe(Char, Int), Maybe Api.MoveResult)
     toList (Api.Moves {coord, result, prev}) acc =
       case prev of
-        Nothing -> acc
+        Nothing -> (coord, result) :: acc
         Just p -> toList p ((coord, result)::acc)
     mapResult : Int -> Maybe Api.MoveResult -> CellState
     mapResult n r =
@@ -102,16 +103,16 @@ applyMoves model moves =
         Just Api.Hit -> Hit n
     mapCoord : Maybe (Char, Int) -> (Char, Int)
     mapCoord = Maybe.withDefault ('0', 0)
-    asListWithResults : List (Int, (Char, Int), CellState)
-    asListWithResults = toList moves [] |> List.reverse |> List.indexedMap (\i (c, r) -> ((i+1), mapCoord c, mapResult (i+1) r))
+    asListWithResults : List ((Char, Int), Maybe Api.MoveResult)
+    asListWithResults = toList moves [] |> List.map (\(c, r) -> (mapCoord c, r))
     len = List.length asListWithResults
-    shifted : List (Int, (Char, Int), CellState)
-    shifted = List.drop 1 asListWithResults ++ [(len, ('0', 0), Awaiting len)]
+    shiftedStates : List (CellState)
+    shiftedStates = List.drop 1 asListWithResults |> List.indexedMap (\i (_, s) -> mapResult (i+1) s) |> (\l -> l ++ [Awaiting len])
     final : List (Int, (Char, Int), CellState)
-    final = List.map2 (\(n1, c1, _) (_, _, s2) -> (n1, c1, s2)) asListWithResults shifted
-    (b1, b2) = List.foldl (\(n, c, s) (a1, a2) -> if n % 2 == 0 then (Dict.insert c s a1, a2) else (a1, Dict.insert c s a2)) (emptyBoard, emptyBoard) final
+    final = List.map2 (\(c, _) s -> (c, s)) asListWithResults shiftedStates |> List.indexedMap (\i (c, s) -> (i, c, s))
+    (ba, bb) = List.foldl (\(n, c, s) (a1, a2) -> if n % 2 /= 0 then (Dict.insert c s a1, a2) else (a1, Dict.insert c s a2)) (emptyBoard, emptyBoard) final
   in
-    {model | boardA = b1, boardB = b2}
+    {model | boardA = ba, boardB = bb}
 
 msgTypeToContentType : MsgType -> String
 msgTypeToContentType msgType =
@@ -150,7 +151,7 @@ renderState s =
     Nothing -> text " "
     Just (Hit n) -> span [style[("color","red")]] [text(toString(n))]
     Just (Miss n) -> span [style[("color","blue")]] [text(toString(n))]
-    Just (Awaiting n) -> text (toString n) 
+    Just (Awaiting n) -> span [style[("color","green")]] [text (toString n)]
 
 tableStyle : Attribute Msg
 tableStyle =
@@ -210,7 +211,11 @@ view model =
         , gameTypeRadio model.gameType Tetris    "Tetris"
         , gameTypeRadio model.gameType TShapes   "T-shapes"
         ]
-      , div[] [
+      , div []
+        [
+          span [] [text ("Last errors: " ++ toString model.errors)] 
+        ]
+      , div [] [
         span [] [text ("Seed: " ++ toString model.seed)]
         ]
       , button [ onClick GenGame ] [ text "Generate" ]
