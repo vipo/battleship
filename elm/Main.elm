@@ -1,7 +1,7 @@
 import Html exposing (Html, Attribute, button, div, span, text, h2, table, tr,
   td, caption, textarea, label, input, fieldset, section)
 import Html.Attributes exposing(style, readonly, cols, rows, type_, checked)
-import Html.Events exposing (onClick)
+import Html.Events exposing (onClick, onInput)
 import Random
 import Http
 
@@ -54,7 +54,9 @@ type Msg = SwitchMsgType MsgType |
   GenGame |
   NewSeed Int |
   SetRaw (Result Http.Error String) |
-  SetBoards (Result Http.Error Api.Moves)
+  SetBoards (Result Http.Error Api.Moves) |
+  SaveRaw String |
+  RenderRaw
 
 genSeed : Cmd Msg
 genSeed = Random.generate NewSeed (Random.int 1 32000)
@@ -86,6 +88,10 @@ update msg model =
       case result of
         Err m -> ({ model | errors = toString m :: model.errors}, Cmd.none)
         Ok m -> (applyMoves model m, Cmd.none)
+    SaveRaw str ->
+      ({ model | rawMessage = String.trim str}, Cmd.none)
+    RenderRaw ->
+      (model, Http.send SetBoards (transformContent (model.msgType, model.rawMessage) (Json ,(Http.expectJson Api.decodeMoves))))
 
 applyMoves : Model -> Moves -> Model
 applyMoves model moves =
@@ -138,6 +144,18 @@ getRawContent msgType gameType seed expect =
     , headers = [Http.header "Accept" (msgTypeToContentType msgType)]
     , url = "/game/" ++ gameTypeToUrl gameType ++ "/arbitrary?seed=" ++ toString seed
     , body = Http.emptyBody
+    , expect = expect
+    , timeout = Nothing
+    , withCredentials = False
+    }
+
+transformContent : (MsgType, String) -> (MsgType, Http.Expect a) -> Http.Request a
+transformContent (msgType, body) (resultType, expect) =
+  Http.request { 
+      method = "POST"
+    , headers = [Http.header "Accept" (msgTypeToContentType resultType)]
+    , url = "/game/transform"
+    , body = Http.stringBody (msgTypeToContentType msgType) body
     , expect = expect
     , timeout = Nothing
     , withCredentials = False
@@ -197,7 +215,7 @@ view model =
       ]
     , div [style [("clear", "both")]] [
         h2 [] [text "Message"]
-      , textarea [readonly True, cols 128, rows 8] [text model.rawMessage]
+      , textarea [cols 128, rows 8, onInput SaveRaw] [text model.rawMessage]
       , fieldset []
         [ msgTypeRadio model.msgType Json        "Json"
         , msgTypeRadio model.msgType JsonNoLists "Json w/o lists"
@@ -206,6 +224,7 @@ view model =
         , msgTypeRadio model.msgType BencodingNoLists "Bencoding w/o lists"
         , msgTypeRadio model.msgType BencodingNoMaps  "Bencoding w/o maps"
         ]
+      , button [ onClick RenderRaw ] [ text "Show on boards" ]
       , fieldset []
         [ gameTypeRadio model.gameType Classical "Classical"
         , gameTypeRadio model.gameType Tetris    "Tetris"

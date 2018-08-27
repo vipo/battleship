@@ -78,7 +78,7 @@ instance Ben.BEncode a => MimeRender BencodingNoMaps a where
 
 type API =
        "game" :> Capture "variation" I.GameVariation :> "arbitrary" :> QueryParam "seed" Int :>
-         Get '[JSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves
+         Get  '[JSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves
   :<|> "game" :> "transform" :> ReqBody '[JSON, Bencoding] I.Moves :>
-         Post '[JSON] I.Moves
+         Post '[JSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves
   :<|> "static" :> Raw
