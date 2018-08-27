@@ -1,6 +1,6 @@
 import Html exposing (Html, Attribute, button, div, span, text, h2, table, tr,
   td, caption, textarea, label, input, fieldset, section)
-import Html.Attributes exposing(style, readonly, cols, rows, type_, checked)
+import Html.Attributes exposing(style, readonly, cols, rows, type_, checked, value)
 import Html.Events exposing (onClick, onInput)
 import Random
 import Http
@@ -215,7 +215,7 @@ view model =
       ]
     , div [style [("clear", "both")]] [
         h2 [] [text "Message"]
-      , textarea [cols 128, rows 8, onInput SaveRaw] [text model.rawMessage]
+      , textarea [cols 128, rows 8, onInput SaveRaw, value model.rawMessage] []
       , fieldset []
         [ msgTypeRadio model.msgType Json        "Json"
         , msgTypeRadio model.msgType JsonNoLists "Json w/o lists"
@@ -224,7 +224,7 @@ view model =
         , msgTypeRadio model.msgType BencodingNoLists "Bencoding w/o lists"
         , msgTypeRadio model.msgType BencodingNoMaps  "Bencoding w/o maps"
         ]
-      , button [ onClick RenderRaw ] [ text "Show on boards" ]
+      , button [ onClick RenderRaw ] [ text "Show" ]
       , fieldset []
         [ gameTypeRadio model.gameType Classical "Classical"
         , gameTypeRadio model.gameType Tetris    "Tetris"
