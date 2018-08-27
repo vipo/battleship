@@ -17,6 +17,7 @@ import Bencoding as B
 import qualified Data.Aeson as A
 import qualified Data.BEncode as Ben
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as BLS
 import qualified Data.Maybe as Maybe
 import qualified Data.Text as T
 import GHC.Generics
@@ -60,6 +61,8 @@ instance Accept Bencoding where
   contentType _ = bencMt ""
 instance Ben.BEncode a => MimeRender Bencoding a where
   mimeRender _ = Ben.encode . Ben.toBEncode
+instance Ben.BEncode a => MimeUnrender Bencoding a where
+  mimeUnrender _ = Ben.decode . BLS.toStrict
 
 data BencodingNoLists
 instance Accept BencodingNoLists where
@@ -74,6 +77,8 @@ instance Ben.BEncode a => MimeRender BencodingNoMaps a where
   mimeRender _ = Ben.encode . B.withOutMaps . Ben.toBEncode
 
 type API =
-    "game" :> Capture "variation" I.GameVariation :> "arbitrary" :> QueryParam "seed" Int :>
-      Get '[JSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves
-   :<|> "static" :> Raw
+       "game" :> Capture "variation" I.GameVariation :> "arbitrary" :> QueryParam "seed" Int :>
+         Get '[JSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves
+  :<|> "game" :> "transform" :> ReqBody '[JSON, Bencoding] I.Moves :>
+         Post '[JSON] I.Moves
+  :<|> "static" :> Raw

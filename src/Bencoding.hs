@@ -9,6 +9,8 @@ import Data.BEncode
 import qualified Data.BEncode.BDict as BDict
 
 import qualified Data.List as L
+import qualified Data.Text as T
+import qualified Data.ByteString as BS
 
 import Interface as I
 
@@ -17,15 +19,37 @@ import Data.String.Conversions
 instance BEncode MoveResult where
   toBEncode Miss = BString "MISS"
   toBEncode Hit = BString "HIT"
-  fromBEncode _ = Left "Not Implemented"
+  fromBEncode (BString "MISS") = Right Miss
+  fromBEncode (BString "HIT") = Right Hit
+  fromBEncode a = decodingError $ "Unknown MoveResult: " ++ show a
 
 instance BEncode Moves where
   toBEncode Moves {..} = toDict $
-      "coord" .=! map toBEncode coord .:
-      "prev" .=? prev .:
-      "result" .=? result .:
-      endDict
-  fromBEncode _ = Left "Not Implemented"
+    "coord" .=! map toBEncode coord .:
+    "prev" .=? prev .:
+    "result" .=? result .:
+    endDict
+  fromBEncode = getMoves
+    where
+      getMoves :: BValue -> Result Moves
+      getMoves (BDict dict) = do
+        r <- optField dict "result"
+        p <- optField dict "prev"
+        c <- reqField dict "coord"
+        cc <- mapM coordValue c
+        return $ Moves cc r p
+      getMoves a = decodingError $ "dict expected, found: " ++ show a
+      optField :: BEncode a => BDict.BDictMap BValue-> BDict.BKey -> Result (Maybe a)
+      optField dict key = case BDict.lookup key dict of
+        Nothing -> Right Nothing
+        Just v -> Just <$> fromBEncode v
+      reqField :: BEncode a => BDict.BDictMap BValue-> BDict.BKey -> Result a
+      reqField dict key = case BDict.lookup key dict of
+        Nothing -> decodingError $ "mandatory field not found: " ++ cs key
+        Just v -> fromBEncode v
+      coordValue :: BValue -> Result T.Text
+      coordValue (BString s) = Right $ cs s
+      coordValue a = decodingError $ "value not expected: " ++ show a 
   
 instance JsonLike BValue where
   toJsonLike (BDict m) = JLMap $ map (\(k, v) -> (cs k, toJsonLike v)) (BDict.toAscList m)

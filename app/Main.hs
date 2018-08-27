@@ -20,13 +20,17 @@ import Network.HTTP.Media((//), MediaType)
 import Network.Wai.Handler.Warp
 import Servant
 
+import System.IO
+
 import Paths_battleship
 
 server :: Server API
-server = arbitrary :<|> serveDirectoryWebApp "static"
+server = arbitrary :<|> echo :<|> serveDirectoryWebApp "static"
   where
     arbitrary :: GameVariation -> Maybe Int -> Handler Moves
     arbitrary variation seed = liftIO $ arbitraryGame variation seed
+    echo :: Moves -> Handler Moves
+    echo = return
 
 api :: Proxy API
 api = Proxy
@@ -35,4 +39,9 @@ app :: Application
 app = serve api server
 
 main :: IO ()
-main = run 8080 app
+main = do
+  hSetBuffering stdout LineBuffering
+  putStrLn $ "Starting on port " ++ show port
+  run port app
+  where
+    port = 8080

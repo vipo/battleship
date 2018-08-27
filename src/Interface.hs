@@ -21,17 +21,19 @@ import qualified GHC.Generics as Gen
 import qualified Data.Text as T
 import qualified TextShow as TS
 
+import Type.Reflection
+
 data GameVariation = Classical | Tetris | TShape
   deriving (Gen.Generic)
 
 data MoveResult = Miss | Hit
-  deriving (Eq, Show, Gen.Generic)
+  deriving (Eq, Show, Gen.Generic, Typeable)
 
 data Moves = Moves {
   coord :: [Text]
   , result :: Maybe MoveResult
   , prev :: Maybe Moves
-} deriving (Gen.Generic, Show, Eq)
+} deriving (Gen.Generic, Show, Eq, Typeable)
 
 data JsonLikeValue a = JLMap [(Text, JsonLikeValue a)] | JLArray [JsonLikeValue a] | JLRaw a
 

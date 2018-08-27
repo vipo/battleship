@@ -13,6 +13,7 @@ import Bencoding as B
 
 import qualified Data.Aeson.Types as A
 import qualified Data.Aeson as Aeson
+import qualified Data.ByteString.Lazy as BSL
 import qualified Data.BEncode as Ben
 import qualified Data.BEncode.BDict as BDict
 import qualified Data.ByteString as BS
@@ -45,14 +46,24 @@ someGameI = I.Moves ["C","3"] (Just I.Hit) $ Just (
     I.Moves ["A","1"] Nothing Nothing)
   )
 
+someGameJson :: BSL.ByteString
+someGameJson = "{\"coord\":[\"C\",\"3\"],\"result\":\"HIT\",\"prev\":{\"coord\":[\"B\",\"2\"],\"result\":\"MISS\",\"prev\":{\"coord\":[\"A\",\"1\"],\"result\":null,\"prev\":null}}}"
+
+someGameBencoding :: BSL.ByteString
+someGameBencoding = "d5:coordl1:C1:3e4:prevd5:coordl1:B1:2e4:prevd5:coordl1:A1:1ee6:result4:MISSe6:result3:HITe"
+
 common :: TestTree
 common = testGroup "Smoke test" [
   testCase "map domain to interface" $ 
     D.toNestedMoves someGame @?= someGameI,
   testCase "renders default json" $
-    Aeson.encode someGameI @?= "{\"coord\":[\"C\",\"3\"],\"result\":\"HIT\",\"prev\":{\"coord\":[\"B\",\"2\"],\"result\":\"MISS\",\"prev\":{\"coord\":[\"A\",\"1\"],\"result\":null,\"prev\":null}}}",
+    Aeson.encode someGameI @?= someGameJson,
+  testCase "reads default json" $
+    Aeson.decode someGameJson @?= Just someGameI,
   testCase "renders default bencode" $
-    Ben.encode someGameI @?= "d5:coordl1:C1:3e4:prevd5:coordl1:B1:2e4:prevd5:coordl1:A1:1ee6:result4:MISSe6:result3:HITe"
+    Ben.encode someGameI @?= someGameBencoding,
+  testCase "reads default bencode" $
+    Ben.decode (BSL.toStrict someGameBencoding) @?= Right someGameI
   ]
 
 jsonNoMaps :: TestTree
