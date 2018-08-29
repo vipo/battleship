@@ -20,8 +20,10 @@ dependencies:
 - aeson
 - bencoding
 - bytestring
+- containers
 - http-api-data
 - http-media
+- mtl
 - servant
 - servant-server
 - scientific

@@ -4,7 +4,10 @@
 
 module Json where
 
+import qualified Data.Aeson as A
 import Data.Aeson.Types
+
+import qualified Data.ByteString.Lazy as BSL
 
 import qualified Data.HashMap.Strict as HMS
 import qualified Data.Vector as V
@@ -34,8 +37,24 @@ instance JsonLike Value where
 
   stringKey = JLRaw . String
 
-withOutLists ::Value -> Value
+jsonDecode :: FromJSON a => BSL.ByteString -> Either String a
+jsonDecode a = case A.decode a of
+  Just v -> Right v
+  Nothing -> Left "Invalid json"
+
+fromJsonValue :: FromJSON a => Value -> Either String a
+fromJsonValue a = case A.fromJSON a of
+  Error s -> Left s
+  Success a -> Right a
+
+withOutLists :: Value -> Value
 withOutLists = fromJsonLike . I.withOutLists . toJsonLike
+
+fromWithOutLists :: FromJSON a => Value -> Either String a
+fromWithOutLists v = do
+  transformed <- I.fromWithOutLists (toJsonLike v)
+  let js = fromJsonLike transformed
+  fromJsonValue js
 
 withOutMaps :: Value -> Value
 withOutMaps = fromJsonLike . I.withOutMaps . toJsonLike

@@ -62,8 +62,14 @@ instance JsonLike BValue where
 
   stringKey = JLRaw . BString . cs
 
-withOutLists ::BValue -> BValue
+withOutLists :: BValue -> BValue
 withOutLists = fromJsonLike . I.withOutLists . toJsonLike
+
+fromWithOutLists :: BEncode a => BValue -> Either String a
+fromWithOutLists v = do
+  transformed <- I.fromWithOutLists (toJsonLike v)
+  let b = fromJsonLike transformed
+  fromBEncode b
 
 withOutMaps :: BValue -> BValue
 withOutMaps = fromJsonLike . I.withOutMaps . toJsonLike

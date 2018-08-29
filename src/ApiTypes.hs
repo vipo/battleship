@@ -16,6 +16,7 @@ import Bencoding as B
 
 import qualified Data.Aeson as A
 import qualified Data.BEncode as Ben
+import qualified Data.BEncode.Internal as BenI
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BLS
 import qualified Data.Maybe as Maybe
@@ -49,6 +50,8 @@ instance Accept JSONNoLists where
   contentType _ = jsonMt "+nolists"
 instance A.ToJSON a => MimeRender JSONNoLists a where
   mimeRender _ = A.encode . J.withOutLists . A.toJSON
+instance A.FromJSON a => MimeUnrender JSONNoLists a where
+  mimeUnrender _ v = J.jsonDecode v >>= J.fromWithOutLists
   
 data JSONNoMaps
 instance Accept JSONNoMaps where
@@ -69,6 +72,8 @@ instance Accept BencodingNoLists where
   contentType _ = bencMt "+nolists"
 instance Ben.BEncode a => MimeRender BencodingNoLists a where
   mimeRender _ = Ben.encode . B.withOutLists . Ben.toBEncode
+instance Ben.BEncode a => MimeUnrender BencodingNoLists a where
+  mimeUnrender _ v = BenI.parse (BLS.toStrict v) >>= B.fromWithOutLists
 
 data BencodingNoMaps
 instance Accept BencodingNoMaps where
@@ -79,6 +84,6 @@ instance Ben.BEncode a => MimeRender BencodingNoMaps a where
 type API =
        "game" :> Capture "variation" I.GameVariation :> "arbitrary" :> QueryParam "seed" Int :>
          Get  '[JSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves
-  :<|> "game" :> "transform" :> ReqBody '[JSON, Bencoding] I.Moves :>
+  :<|> "game" :> "transform" :> ReqBody '[JSON, JSONNoLists, Bencoding, BencodingNoLists] I.Moves :>
          Post '[JSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves
   :<|> "static" :> Raw

@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 759c23329cc808bbafef980e98c036c6eefbdfe32f724091c4d2ee7173b7a329
+-- hash: a58b600f57e896c2c8f2a1b5892f23e58cfb03a9b8dc6549a97d4ebdafa98787
 
 name:           battleship
 version:        0.1.0.0
@@ -44,8 +44,10 @@ library
     , base >=4.7 && <5
     , bencoding
     , bytestring
+    , containers
     , http-api-data
     , http-media
+    , mtl
     , scientific
     , servant
     , servant-server
@@ -69,8 +71,10 @@ executable battleship
     , battleship
     , bencoding
     , bytestring
+    , containers
     , http-api-data
     , http-media
+    , mtl
     , random
     , scientific
     , servant
@@ -98,8 +102,10 @@ test-suite battleship-test
     , battleship
     , bencoding
     , bytestring
+    , containers
     , http-api-data
     , http-media
+    , mtl
     , scientific
     , servant
     , servant-server
