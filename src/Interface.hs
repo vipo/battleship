@@ -5,7 +5,7 @@
 module Interface (
   JsonLike(..), JsonLikeValue(..),
   Moves(..), MoveResult(..), GameVariation(..), 
-  withOutLists, withOutMaps, fromWithOutLists
+  withOutLists, withOutMaps, fromWithOutLists, fromWithOutMaps
 ) where
 
 import qualified Data.Aeson.Types as A
@@ -43,6 +43,7 @@ data Moves = Moves {
 data JsonLikeValue a =
   JLMap [(Text, JsonLikeValue a)] |
   JLArray [JsonLikeValue a] |
+  JLString Text |
   JLNull |
   JLRaw a
   deriving Show
@@ -64,6 +65,19 @@ withOutMaps :: JsonLike a => JsonLikeValue a -> JsonLikeValue a
 withOutMaps (JLMap m) = JLArray $ L.concatMap (\(k, v) -> [stringKey k, withOutMaps v]) m
 withOutMaps (JLArray v) = JLArray $ L.map withOutMaps v
 withOutMaps a = a
+
+fromWithOutMaps :: JsonLike a => JsonLikeValue a -> Either String (JsonLikeValue a)
+fromWithOutMaps d = runCompM d comp
+  where
+    comp :: JsonLike a1 => MapM a1 (JsonLikeValue a1)
+    comp = do
+      curr <- currentNode
+      n <- listAsMap curr
+      let result = JLMap $ Map.toList n
+      case Map.lookup "prev" n of
+        Nothing -> return result
+        Just JLNull -> return result
+        Just p  -> recurseM p comp >>= (\d -> return (JLMap (Map.toList (Map.insert "prev" d n))))
 
 fromWithOutLists :: JsonLike a => JsonLikeValue a -> Either String (JsonLikeValue a)
 fromWithOutLists d = runCompM d comp
@@ -119,3 +133,15 @@ insertInJLMap k v = do
 asMap :: JsonLike a => JsonLikeValue a -> MapM a (Map.Map Text (JsonLikeValue a))
 asMap (JLMap m) = return $ Map.fromList m
 asMap a = throwError $ "Map expected, found: " ++ show a
+
+listAsMap :: JsonLike a => JsonLikeValue a -> MapM a (Map.Map Text (JsonLikeValue a))
+listAsMap (JLArray a) = readKey a $ Map.fromList []
+  where
+    readKey :: JsonLike a1 => [JsonLikeValue a1] -> Map.Map Text (JsonLikeValue a1) -> MapM a1 (Map.Map Text (JsonLikeValue a1))
+    readKey [] acc = return acc
+    readKey (JLString s:t) acc = readValue s t acc
+    readKey a _ = throwError $ "A key value expected, found: " ++ show a
+    readValue :: JsonLike a2 => Text -> [JsonLikeValue a2] -> Map.Map Text (JsonLikeValue a2) -> MapM a2 (Map.Map Text (JsonLikeValue a2))
+    readValue k [] _ = throwError $ "A value was expected for key: " ++ show k
+    readValue k (h:t) acc = readKey t $ Map.insert k h acc
+listAsMap a = throwError $ "List expected, found: " ++ show a

@@ -57,6 +57,8 @@ instance Accept JSONNoMaps where
   contentType _ = jsonMt "+nomaps"
 instance A.ToJSON a => MimeRender JSONNoMaps a where
   mimeRender _ = A.encode . J.withOutMaps . A.toJSON
+instance A.FromJSON a => MimeUnrender JSONNoMaps a where
+  mimeUnrender _ = J.fromWithOutMaps
 
 data Bencoding
 instance Accept Bencoding where
@@ -79,10 +81,12 @@ instance Accept BencodingNoMaps where
   contentType _ = bencMt "+nomaps"
 instance Ben.BEncode a => MimeRender BencodingNoMaps a where
   mimeRender _ = Ben.encode . B.withOutMaps . Ben.toBEncode
+instance Ben.BEncode a => MimeUnrender BencodingNoMaps a where
+  mimeUnrender _ = B.fromWithOutMaps
 
 type API =
        "game" :> Capture "variation" I.GameVariation :> "arbitrary" :> QueryParam "seed" Int :>
          Get  '[JSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves
-  :<|> "game" :> "translate" :> ReqBody '[JSON, JSONNoLists, Bencoding, BencodingNoLists] I.Moves :>
+  :<|> "game" :> "translate" :> ReqBody '[JSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves :>
          Post '[JSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves
   :<|> "static" :> Raw

@@ -56,11 +56,13 @@ instance BEncode Moves where
 instance JsonLike BValue where
   toJsonLike (BDict m) = JLMap $ map (\(k, v) -> (cs k, toJsonLike v)) (BDict.toAscList m)
   toJsonLike (BList v) = JLArray $ map toJsonLike v
+  toJsonLike (BString t) = JLString $ cs t
   toJsonLike a = JLRaw a
 
   fromJsonLike (JLMap m) = BDict $ BDict.fromAscList $ L.map (\(k, v) -> (cs k, fromJsonLike v)) m
   fromJsonLike (JLArray v) = BList $ L.map fromJsonLike v
   fromJsonLike JLNull = BDict $ BDict.fromAscList []
+  fromJsonLike (JLString t) = BString $ cs t
   fromJsonLike (JLRaw a) = a
 
   stringKey = JLRaw . BString . cs
@@ -72,6 +74,13 @@ fromWithOutLists :: BEncode a => BLS.ByteString -> Either String a
 fromWithOutLists v = do
   val <- BenI.parse (BLS.toStrict v) 
   transformed <- I.fromWithOutLists (toJsonLike val)
+  let b = fromJsonLike transformed
+  fromBEncode b
+
+fromWithOutMaps :: BEncode a => BLS.ByteString -> Either String a
+fromWithOutMaps v = do
+  val <- BenI.parse (BLS.toStrict v) 
+  transformed <- I.fromWithOutMaps (toJsonLike val)
   let b = fromJsonLike transformed
   fromBEncode b
 
