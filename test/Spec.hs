@@ -77,17 +77,20 @@ jsonNoMaps = testGroup "Eliminate maps" [
   ]
 
 jsonNoLists :: TestTree
-jsonNoLists = testGroup "Eliminate lists" [
+jsonNoLists = testGroup "Eliminated lists" [
   testCase "root" $ 
     J.withOutLists (jarray [A.emptyArray, A.String "b"]) @?=
       A.object [("1", A.object []), ("2", A.String "b")],
   testCase "nested" $
     J.withOutLists (A.object [("b", A.String "b"), ("a", jarray[A.String "a", A.String "b"])]) @?=
-      A.object [("b", A.String "b"), ("a", A.object[("1", A.String "a"), ("2", A.String "b")])]
+      A.object [("b", A.String "b"), ("a", A.object[("1", A.String "a"), ("2", A.String "b")])],
+  testCase "decode" $
+    J.fromWithOutLists "{\"coord\":{\"a\":\"C\",\"b\":\"3\"},\"result\":\"HIT\",\"prev\":{\"coord\":{\"a\":\"B\",\"b\":\"2\"},\"result\":\"MISS\",\"prev\":{\"coord\":{\"1\":\"A\",\"2\":\"1\"},\"result\":null,\"prev\":null}}}" @?=
+      Right someGameI
   ]
 
 bencodeNoMaps :: TestTree
-bencodeNoMaps = testGroup "Eliminate maps" [
+bencodeNoMaps = testGroup "Eliminated maps" [
   testCase "root" $ 
     B.withOutMaps (bmap [("a", Ben.BList []), ("b", Ben.BString "b")]) @?=
       barray [Ben.BString "a", barray [], Ben.BString "b", Ben.BString "b"],
@@ -103,7 +106,10 @@ bencodeNoLists = testGroup "Eliminate lists" [
       bmap [("1", bmap []), ("2", Ben.BString "b")],
   testCase "nested" $
     B.withOutLists (bmap [("b", Ben.BString "b"), ("a", barray [Ben.BString "a", Ben.BString "b"])]) @?=
-      bmap [("b", Ben.BString "b"), ("a", bmap[("1", Ben.BString "a"), ("2", Ben.BString "b")])]
+      bmap [("b", Ben.BString "b"), ("a", bmap[("1", Ben.BString "a"), ("2", Ben.BString "b")])],
+  testCase "decode" $
+    B.fromWithOutLists "d5:coordd1:a1:C1:b1:3e4:prevd5:coordd1:a1:B1:b1:2e4:prevd5:coordd1:a1:A1:b1:1ee6:result4:MISSe6:result3:HITe" @?=
+      Right someGameI
   ]      
 
 jarray :: [A.Value] -> A.Value

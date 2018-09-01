@@ -29,10 +29,12 @@ instance FromJSON Moves
 instance JsonLike Value where
   toJsonLike (Object m) = JLMap $ map (\(k, v) -> (k, toJsonLike v)) (HMS.toList m)
   toJsonLike (Array v) = JLArray $ map toJsonLike $ V.toList v
+  toJsonLike Null = JLNull
   toJsonLike a = JLRaw a
 
   fromJsonLike (JLMap m) = Object $ HMS.fromList $ map (\(k, v) -> (k, fromJsonLike v)) m
   fromJsonLike (JLArray v) = Array $ V.fromList $ map fromJsonLike v
+  fromJsonLike JLNull = Null
   fromJsonLike (JLRaw a) = a
 
   stringKey = JLRaw . String
@@ -50,8 +52,9 @@ fromJsonValue a = case A.fromJSON a of
 withOutLists :: Value -> Value
 withOutLists = fromJsonLike . I.withOutLists . toJsonLike
 
-fromWithOutLists :: FromJSON a => Value -> Either String a
-fromWithOutLists v = do
+fromWithOutLists :: FromJSON a => BSL.ByteString -> Either String a
+fromWithOutLists a = do
+  v <- jsonDecode a
   transformed <- I.fromWithOutLists (toJsonLike v)
   let js = fromJsonLike transformed
   fromJsonValue js

@@ -6,11 +6,13 @@
 module Bencoding where
 
 import Data.BEncode
+import qualified Data.BEncode.Internal as BenI
 import qualified Data.BEncode.BDict as BDict
 
 import qualified Data.List as L
 import qualified Data.Text as T
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as BLS
 
 import Interface as I
 
@@ -58,6 +60,7 @@ instance JsonLike BValue where
 
   fromJsonLike (JLMap m) = BDict $ BDict.fromAscList $ L.map (\(k, v) -> (cs k, fromJsonLike v)) m
   fromJsonLike (JLArray v) = BList $ L.map fromJsonLike v
+  fromJsonLike JLNull = BDict $ BDict.fromAscList []
   fromJsonLike (JLRaw a) = a
 
   stringKey = JLRaw . BString . cs
@@ -65,9 +68,10 @@ instance JsonLike BValue where
 withOutLists :: BValue -> BValue
 withOutLists = fromJsonLike . I.withOutLists . toJsonLike
 
-fromWithOutLists :: BEncode a => BValue -> Either String a
+fromWithOutLists :: BEncode a => BLS.ByteString -> Either String a
 fromWithOutLists v = do
-  transformed <- I.fromWithOutLists (toJsonLike v)
+  val <- BenI.parse (BLS.toStrict v) 
+  transformed <- I.fromWithOutLists (toJsonLike val)
   let b = fromJsonLike transformed
   fromBEncode b
 

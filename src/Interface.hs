@@ -1,7 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE StrictData #-}
-{-# LANGUAGE RankNTypes #-}
 
 module Interface (
   JsonLike(..), JsonLikeValue(..),
@@ -44,6 +43,7 @@ data Moves = Moves {
 data JsonLikeValue a =
   JLMap [(Text, JsonLikeValue a)] |
   JLArray [JsonLikeValue a] |
+  JLNull |
   JLRaw a
   deriving Show
 
@@ -60,52 +60,62 @@ withOutLists (JLMap m) = JLMap $ L.map (\(k, v) -> (k, withOutLists v)) m
 withOutLists (JLArray v) = JLMap $ L.zip (lexOrdered (L.length v)) (L.map withOutLists v)
 withOutLists a = a
 
-fromWithOutLists :: JsonLike a => JsonLikeValue a -> Either String (JsonLikeValue a)
-fromWithOutLists (JLMap d) = runCompM (Map.fromList d) comp
-  where
-    comp :: forall a1 . JsonLike a1 => MapM (JsonLikeValue a1) (JsonLikeValue a1)
-    comp = do
-      coord <- lookupM "coord"
-      cm <- asJLMapM coord
-      insertM "coord" $ JLArray $ L.map snd $ L.sortBy (\(a,_) (b,_) -> compare a b) cm
-      prev <- safeLookupM "prev"
-      case prev of
-        Nothing -> currentNodeM
-        Just p -> currentNodeM
-fromWithOutLists a = Left $ "Map expected, found: " ++ show a
-
 withOutMaps :: JsonLike a => JsonLikeValue a -> JsonLikeValue a
 withOutMaps (JLMap m) = JLArray $ L.concatMap (\(k, v) -> [stringKey k, withOutMaps v]) m
 withOutMaps (JLArray v) = JLArray $ L.map withOutMaps v
 withOutMaps a = a
 
-type MapM v = ExceptT String (State (Map.Map Text v))
+fromWithOutLists :: JsonLike a => JsonLikeValue a -> Either String (JsonLikeValue a)
+fromWithOutLists d = runCompM d comp
+  where
+    comp :: JsonLike a1 => MapM a1 (JsonLikeValue a1)
+    comp = do
+      coord <- lookupInJLMap "coord"
+      cm <- asMap coord
+      insertInJLMap "coord" $ JLArray $ L.map snd $ L.sortBy (\(a,_) (b,_) -> compare a b) (Map.toList cm)
+      prev <- safeLookupInJLMap "prev"
+      case prev of
+        Nothing -> currentNode
+        Just JLNull -> currentNode
+        Just p  -> recurseM p comp >>= insertInJLMap "prev" >> currentNode
 
-runCompM :: JsonLike a => Map.Map Text (JsonLikeValue a) -> MapM (JsonLikeValue a) (JsonLikeValue a) -> Either String (JsonLikeValue a)
+recurseM :: JsonLike a => JsonLikeValue a -> MapM a (JsonLikeValue a) -> MapM a (JsonLikeValue a)
+recurseM d comp =
+  case runCompM d comp of
+    Right r -> return r
+    Left m -> throwError m
+
+type MapM v a = ExceptT String (State (JsonLikeValue v)) a
+
+runCompM :: JsonLike a => JsonLikeValue a -> MapM a (JsonLikeValue a) -> Either String (JsonLikeValue a)
 runCompM state comp = evalState (runExceptT comp) state
 
-currentNodeM :: JsonLike a => MapM (JsonLikeValue a) (JsonLikeValue a)
-currentNodeM = do
-  m <- lift get
-  return $ JLMap $ Map.toList m
+currentNode :: JsonLike a => MapM a (JsonLikeValue a)
+currentNode = lift get
 
-safeLookupM :: JsonLike a => Text -> MapM (JsonLikeValue a) (Maybe (JsonLikeValue a))
-safeLookupM k = do
-  m <- lift get
-  return $ Map.lookup k m
+safeLookupInJLMap :: JsonLike a => Text -> MapM a (Maybe (JsonLikeValue a))
+safeLookupInJLMap k = do
+  jlv <- lift get
+  case jlv of
+    JLMap m -> return $ Map.lookup k (Map.fromList m)
+    a -> throwError $ L.concat ["Map expected for safe lookup of ", show k, ", found: ", show a]
 
-lookupM :: JsonLike a => Text -> MapM (JsonLikeValue a) (JsonLikeValue a) 
-lookupM k = do
-  m <- lift get
-  case Map.lookup k m of
-    Just v -> return v
-    Nothing -> throwError $ "Key not found: " ++ show k
+lookupInJLMap :: JsonLike a => Text -> MapM a (JsonLikeValue a)
+lookupInJLMap k = do
+  jlv <- lift get
+  case jlv of
+    JLMap m -> case Map.lookup k (Map.fromList m) of
+      Just v -> return v
+      Nothing -> throwError $ "Key not found: " ++ show k
+    a -> throwError $ L.concat ["Map expected for lookup of ", show k, ", found: ", show a]
 
-insertM :: JsonLike a => Text -> JsonLikeValue a -> MapM (JsonLikeValue a) ()
-insertM k v = do
-  m <- lift get
-  lift $ put $ Map.insert k v m  
+insertInJLMap :: JsonLike a => Text -> JsonLikeValue a -> MapM a ()
+insertInJLMap k v = do
+  jlv <- lift get
+  case jlv of
+    JLMap m -> lift $ put $ JLMap $ Map.toList $ Map.insert k v (Map.fromList m)
+    a -> throwError $ "Map expected on insert, found: " ++ show a
 
-asJLMapM :: JsonLike a => JsonLikeValue a -> MapM (JsonLikeValue a) [(Text, JsonLikeValue a)]
-asJLMapM (JLMap m) = return m
-asJLMapM a = throwError $ "Map expected, found: " ++ show a
+asMap :: JsonLike a => JsonLikeValue a -> MapM a (Map.Map Text (JsonLikeValue a))
+asMap (JLMap m) = return $ Map.fromList m
+asMap a = throwError $ "Map expected, found: " ++ show a

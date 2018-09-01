@@ -154,7 +154,7 @@ transformContent (msgType, body) (resultType, expect) =
   Http.request { 
       method = "POST"
     , headers = [Http.header "Accept" (msgTypeToContentType resultType)]
-    , url = "/game/transform"
+    , url = "/game/translate"
     , body = Http.stringBody (msgTypeToContentType msgType) body
     , expect = expect
     , timeout = Nothing
