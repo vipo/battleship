@@ -1,8 +1,8 @@
--- This file has been generated from package.yaml by hpack version 0.21.2.
+-- This file has been generated from package.yaml by hpack version 0.28.2.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a58b600f57e896c2c8f2a1b5892f23e58cfb03a9b8dc6549a97d4ebdafa98787
+-- hash: a368d4abb5312b83d3841431a964b51b49b4b05f16e8bc0ebcbfd81f08630a43
 
 name:           battleship
 version:        0.1.0.0
@@ -16,11 +16,9 @@ license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
 cabal-version:  >= 1.10
-
 extra-source-files:
     ChangeLog.md
     README.md
-
 data-files:
     static/index.html
 
