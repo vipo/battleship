@@ -1,0 +1,48 @@
+#cloud-config
+
+coreos:
+  update:
+    reboot-strategy: "reboot"
+  units:
+    - name: battleship.service
+      command: start
+      enable: true
+      content: |
+        [Unit]
+        Description=Battleship
+        After=docker.service
+        Requires=docker.service
+
+        [Service]
+        TimeoutStartSec=0
+        ExecStartPre=-/usr/bin/docker kill battleship
+        ExecStartPre=-/usr/bin/docker rm battleship
+        ExecStartPre=/usr/bin/docker pull vipo/battleship:latest
+        ExecStart=/usr/bin/docker run --name battleship -p 8080:8080 vipo/battleship:latest battleship
+
+        ExecStop=/usr/bin/docker kill battleship
+
+        [Install]
+        WantedBy=multi-user.target
+    - name: nginx.service
+      command: start
+      enable: true
+      content: |
+        [Unit]
+        Description=Nginx
+        After=docker.service
+        After=battleship.service
+        Requires=docker.service
+        Requires=battleship.service
+
+        [Service]
+        TimeoutStartSec=0
+        ExecStartPre=-/usr/bin/docker kill battleship-nginx
+        ExecStartPre=-/usr/bin/docker rm battleship-nginx
+        ExecStartPre=/usr/bin/docker pull vipo/battleship-nginx:latest
+        ExecStart=/usr/bin/docker run --name battleship-nginx -p 80:80 --link battleship:battleship vipo/battleship-nginx:latest
+
+        ExecStop=/usr/bin/docker kill battleship-nginx
+
+        [Install]
+        WantedBy=multi-user.target

@@ -3,3 +3,11 @@ resolver: lts-12.2
 packages:
 - .
 - bencoding
+
+docker:
+  enable: false
+  auto-pull: true
+image:
+  container:
+    name: vipo/battleship
+    base: vipo/stack-run
