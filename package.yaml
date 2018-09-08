@@ -12,9 +12,6 @@ extra-source-files:
 
 description:         Please see the README on GitHub at <https://github.com/vipo/battleship#readme>
 
-data-files:
-- static/*.html
-
 dependencies:
 - base >= 4.7 && < 5
 - aeson

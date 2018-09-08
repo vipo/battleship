@@ -20,12 +20,8 @@ import Network.HTTP.Media((//), MediaType)
 import Network.Wai.Handler.Warp
 import Servant
 
-import System.IO
-
-import Paths_battleship
-
 server :: Server API
-server = arbitrary :<|> echo :<|> serveDirectoryWebApp "static"
+server = arbitrary :<|> echo
   where
     arbitrary :: GameVariation -> Maybe Int -> Handler Moves
     arbitrary variation seed = liftIO $ arbitraryGame variation seed
