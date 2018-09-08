@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a368d4abb5312b83d3841431a964b51b49b4b05f16e8bc0ebcbfd81f08630a43
+-- hash: 60aec9076e68cccc0b2cc3ef43952fffbb24d8539eb799b5e3ade83935411556
 
 name:           battleship
 version:        0.1.0.0
@@ -19,8 +19,6 @@ cabal-version:  >= 1.10
 extra-source-files:
     ChangeLog.md
     README.md
-data-files:
-    static/index.html
 
 source-repository head
   type: git

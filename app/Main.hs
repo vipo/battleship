@@ -20,6 +20,8 @@ import Network.HTTP.Media((//), MediaType)
 import Network.Wai.Handler.Warp
 import Servant
 
+import System.IO
+
 server :: Server API
 server = arbitrary :<|> echo
   where
