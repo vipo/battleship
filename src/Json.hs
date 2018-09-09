@@ -4,6 +4,8 @@
 
 module Json where
 
+import Control.Monad ((>=>))
+
 import qualified Data.Aeson as A
 import Data.Aeson.Types
 
@@ -41,7 +43,7 @@ instance JsonLike Value where
 
   stringKey = JLRaw . String
 
-jsonDecode :: FromJSON a => BSL.ByteString -> Either String a
+jsonDecode :: BSL.ByteString -> Either String Value
 jsonDecode a = case A.decode a of
   Just v -> Right v
   Nothing -> Left "Invalid json"
@@ -54,19 +56,20 @@ fromJsonValue a = case A.fromJSON a of
 withOutLists :: Value -> Value
 withOutLists = fromJsonLike . I.withOutLists . toJsonLike
 
-fromWithOutLists :: FromJSON a => BSL.ByteString -> Either String a
-fromWithOutLists a = do
+transform :: FromJSON a
+  => (JsonLikeValue Value -> Either String Value)
+  -> BSL.ByteString
+  -> Either String a
+transform transformer a = do
   v <- jsonDecode a
-  transformed <- I.fromWithOutLists (toJsonLike v)
-  let js = fromJsonLike transformed
-  fromJsonValue js
+  transformed <- transformer (toJsonLike v)
+  fromJsonValue transformed
+
+fromWithOutLists :: FromJSON a => BSL.ByteString -> Either String a
+fromWithOutLists = transform (I.fromWithOutLists >=> return . fromJsonLike)
 
 fromWithOutMaps :: FromJSON a => BSL.ByteString -> Either String a
-fromWithOutMaps a = do
-  v <- jsonDecode a
-  transformed <- I.fromWithOutMaps (toJsonLike v)
-  let js = fromJsonLike transformed
-  fromJsonValue js
+fromWithOutMaps = transform (I.fromWithOutMaps >=> return . fromJsonLike)
 
 withOutMaps :: Value -> Value
 withOutMaps = fromJsonLike . I.withOutMaps . toJsonLike

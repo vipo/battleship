@@ -5,6 +5,8 @@
 
 module Bencoding where
 
+import Control.Monad ((>=>))
+
 import Data.BEncode
 import qualified Data.BEncode.Internal as BenI
 import qualified Data.BEncode.BDict as BDict
@@ -12,7 +14,7 @@ import qualified Data.BEncode.BDict as BDict
 import qualified Data.List as L
 import qualified Data.Text as T
 import qualified Data.ByteString as BS
-import qualified Data.ByteString.Lazy as BLS
+import qualified Data.ByteString.Lazy as BSL
 
 import Interface as I
 
@@ -70,19 +72,20 @@ instance JsonLike BValue where
 withOutLists :: BValue -> BValue
 withOutLists = fromJsonLike . I.withOutLists . toJsonLike
 
-fromWithOutLists :: BEncode a => BLS.ByteString -> Either String a
-fromWithOutLists v = do
-  val <- BenI.parse (BLS.toStrict v) 
-  transformed <- I.fromWithOutLists (toJsonLike val)
-  let b = fromJsonLike transformed
-  fromBEncode b
+transform :: BEncode a
+  => (JsonLikeValue BValue -> Either String BValue)
+  -> BSL.ByteString
+  -> Either String a
+transform transformer v = do
+  val <- BenI.parse (BSL.toStrict v) 
+  transformed <- transformer (toJsonLike val)
+  fromBEncode transformed
+  
+fromWithOutLists :: BEncode a => BSL.ByteString -> Either String a
+fromWithOutLists = transform (I.fromWithOutLists >=> return . fromJsonLike)
 
-fromWithOutMaps :: BEncode a => BLS.ByteString -> Either String a
-fromWithOutMaps v = do
-  val <- BenI.parse (BLS.toStrict v) 
-  transformed <- I.fromWithOutMaps (toJsonLike val)
-  let b = fromJsonLike transformed
-  fromBEncode b
+fromWithOutMaps :: BEncode a => BSL.ByteString -> Either String a
+fromWithOutMaps = transform (I.fromWithOutMaps >=> return . fromJsonLike)
 
 withOutMaps :: BValue -> BValue
 withOutMaps = fromJsonLike . I.withOutMaps . toJsonLike
