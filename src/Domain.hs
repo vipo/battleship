@@ -6,6 +6,8 @@ module Domain (
   arbitraryGame, toNestedMoves, Column(..), Row(..), Move(..), Game(..)
 ) where
 
+import Boards
+
 import qualified Interface as I
 import qualified GHC.Generics as Gen
 
@@ -13,16 +15,6 @@ import qualified Data.Text as T
 import qualified TextShow as TS
 
 import Data.String.Conversions
-
-data Column = A | B | C | D | E | F | G | H | I | J
-  deriving Show
-
-data Row = R1 | R2 | R3 | R4 | R5 | R6 | R7 | R8 | R9 | R10
-  deriving (Eq, Ord, Bounded, Enum)
-instance Show Row where
-  show r = show (1 + toInteger (fromEnum r))
-
-type Coordinates = (Column, Row) 
 
 data Game = Game {
     firstAttack :: Coordinates
@@ -33,8 +25,6 @@ data Move =
     ReplyAndAttack Coordinates I.MoveResult
   | LastReply I.MoveResult
   deriving Gen.Generic
-
-type Seed = Int
 
 arbitraryGame :: I.GameVariation -> Maybe Seed -> IO I.Moves
 arbitraryGame _ _ = return $ toNestedMoves some
