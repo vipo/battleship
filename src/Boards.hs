@@ -23,13 +23,13 @@ instance Show TShapesGameShip where
   show _ = "T"
 
 data TetrisGameShip =
-  TetrisIShape | TetrisOShape | TetrisLShape | TetrisTShape | TetrisZShape
+  TetrisIShip | TetrisOShip | TetrisLShip | TetrisTShip | TetrisZShip
 instance Show TetrisGameShip where
-  show TetrisIShape = "I"
-  show TetrisOShape = "O"
-  show TetrisLShape = "L"
-  show TetrisTShape = "T"
-  show TetrisZShape = "Z"
+  show TetrisIShip = "I"
+  show TetrisOShip = "O"
+  show TetrisLShip = "L"
+  show TetrisTShip = "T"
+  show TetrisZShip = "Z"
 
 data Column = A | B | C | D | E | F | G | H | I | J
   deriving (Show, Eq, Ord, Bounded, Enum)
@@ -55,6 +55,25 @@ instance Show a => Show (Board a) where
         ]
 
 type Seed = Int
+
+tetrisGameBoard :: Seed -> Board TetrisGameShip
+tetrisGameBoard seed =
+  takeRandom seed $ board1 :| [board2]
+  where
+    board1 = BoardMap $ Map.fromList [
+        ((B,R2), TetrisOShip), ((B,R3), TetrisOShip), ((C,R2), TetrisOShip), ((C,R3), TetrisOShip)
+      , ((B,R7), TetrisLShip), ((B,R8), TetrisLShip), ((B,R9), TetrisLShip), ((C,R9), TetrisLShip)
+      , ((E,R7), TetrisTShip), ((F,R7), TetrisTShip), ((G,R7), TetrisTShip), ((F,R6), TetrisTShip)
+      , ((H,R2), TetrisZShip), ((H,R3), TetrisZShip), ((G,R3), TetrisZShip), ((G,R4), TetrisZShip)
+      , ((I,R6), TetrisIShip), ((I,R7), TetrisIShip), ((I,R8), TetrisIShip), ((I,R9), TetrisIShip)
+      ]
+    board2 = BoardMap $ Map.fromList [
+        ((I,R9), TetrisOShip), ((I,R10),TetrisOShip), ((J,R9), TetrisOShip), ((J,R10),TetrisOShip)
+      , ((I,R1), TetrisLShip), ((J,R1), TetrisLShip), ((J,R2), TetrisLShip), ((J,R3), TetrisLShip)
+      , ((A,R10),TetrisTShip), ((B,R10),TetrisTShip), ((C,R10),TetrisTShip), ((B,R9), TetrisTShip)
+      , ((F,R7), TetrisZShip), ((G,R7), TetrisZShip), ((G,R6), TetrisZShip), ((H,R6), TetrisZShip)
+      , ((A,R2), TetrisIShip), ((A,R3), TetrisIShip), ((A,R4), TetrisIShip), ((A,R5), TetrisIShip)
+      ]
 
 tshapesGameBoard :: Seed -> Board TShapesGameShip
 tshapesGameBoard seed =
