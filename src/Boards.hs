@@ -56,6 +56,25 @@ instance Show a => Show (Board a) where
 
 type Seed = Int
 
+tshapesGameBoard :: Seed -> Board TShapesGameShip
+tshapesGameBoard seed =
+  takeRandom seed $ board1 :| [board2]
+  where
+    board1 = BoardMap $ Map.fromList [
+        ((A,R8), TShapeShip), ((B,R8), TShapeShip), ((C,R8), TShapeShip), ((C,R7), TShapeShip), ((C,R9), TShapeShip)
+      , ((D,R2), TShapeShip), ((D,R3), TShapeShip), ((D,R4), TShapeShip), ((E,R3), TShapeShip), ((F,R3), TShapeShip)
+      , ((H,R2), TShapeShip), ((I,R2), TShapeShip), ((J,R2), TShapeShip), ((I,R3), TShapeShip), ((I,R4), TShapeShip)
+      , ((G,R5), TShapeShip), ((G,R6), TShapeShip), ((G,R7), TShapeShip), ((H,R6), TShapeShip), ((I,R6), TShapeShip)
+      , ((J,R8), TShapeShip), ((J,R9), TShapeShip), ((J,R10),TShapeShip), ((I,R9), TShapeShip), ((H,R9), TShapeShip)
+      ]
+    board2 = BoardMap $ Map.fromList [
+        ((A,R4), TShapeShip), ((A,R5), TShapeShip), ((A,R6), TShapeShip), ((B,R5), TShapeShip), ((C,R5), TShapeShip)
+      , ((B,R1), TShapeShip), ((C,R1), TShapeShip), ((D,R1), TShapeShip), ((C,R2), TShapeShip), ((C,R3), TShapeShip)
+      , ((J,R2), TShapeShip), ((J,R3), TShapeShip), ((J,R4), TShapeShip), ((I,R3), TShapeShip), ((H,R3), TShapeShip)
+      , ((B,R8), TShapeShip), ((B,R9), TShapeShip), ((B,R10),TShapeShip), ((A,R10),TShapeShip), ((C,R10),TShapeShip)
+      , ((F,R8), TShapeShip), ((F,R9), TShapeShip), ((F,R10),TShapeShip), ((E,R10),TShapeShip), ((G,R10),TShapeShip)
+      ]
+
 classicalGameBoard :: Seed -> Board ClassicalGameShip
 classicalGameBoard seed =
   takeRandom seed $ board1 :| [board2]
