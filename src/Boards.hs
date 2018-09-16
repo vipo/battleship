@@ -6,6 +6,8 @@ import qualified Data.List.NonEmpty as NE
 import Data.List.NonEmpty (NonEmpty (..))
 
 import Data.Maybe
+import System.Random
+import System.Random.Shuffle(shuffle')
 import Text.Printf
 
 import qualified Data.Map.Strict as Map
@@ -41,24 +43,34 @@ instance Show Row where
 
 type Coordinates = (Column, Row) 
 
+class CoordinatesSet a where
+  contains :: a -> Coordinates -> Bool
+
 newtype Board a = BoardMap (Map.Map Coordinates a)
 
+instance CoordinatesSet (Board a) where
+  contains (BoardMap m) coords = isJust $ Map.lookup coords m
+
+allCols :: [Column]
+allCols = [A .. J]
+
+allRows :: [Row]
+allRows = [R1 .. R10]
+
 instance Show a => Show (Board a) where
-  show (BoardMap m) = concat $ "  |ABCDEFGHIJ|\n" : dashes : [renderRow row | row <- [R1 .. R10]] ++ [dashes] 
+  show (BoardMap m) = concat $ "  |ABCDEFGHIJ|\n" : dashes : [renderRow row | row <- allRows] ++ [dashes] 
     where
       dashes = "--+----------+\n"
       renderRow :: Row -> String
       renderRow row = concat [
           printf "%2s|" (show row)
-        , concat [maybe " " show $ Map.lookup (col, row) m | col <- [A .. J]]
+        , concat [maybe " " show $ Map.lookup (col, row) m | col <- allCols]
         , "|\n"
         ]
 
-type Seed = Int
-
-tetrisGameBoard :: Seed -> Board TetrisGameShip
-tetrisGameBoard seed =
-  takeRandom seed $ board1 :| [board2]
+tetrisGameBoard :: RandomGen g => g -> Board TetrisGameShip
+tetrisGameBoard gen =
+  takeRandom gen $ board1 :| [board2]
   where
     board1 = BoardMap $ Map.fromList [
         ((B,R2), TetrisOShip), ((B,R3), TetrisOShip), ((C,R2), TetrisOShip), ((C,R3), TetrisOShip)
@@ -75,9 +87,9 @@ tetrisGameBoard seed =
       , ((A,R2), TetrisIShip), ((A,R3), TetrisIShip), ((A,R4), TetrisIShip), ((A,R5), TetrisIShip)
       ]
 
-tshapesGameBoard :: Seed -> Board TShapesGameShip
-tshapesGameBoard seed =
-  takeRandom seed $ board1 :| [board2]
+tshapesGameBoard :: RandomGen g => g -> Board TShapesGameShip
+tshapesGameBoard gen =
+  takeRandom gen $ board1 :| [board2]
   where
     board1 = BoardMap $ Map.fromList [
         ((A,R8), TShapeShip), ((B,R8), TShapeShip), ((C,R8), TShapeShip), ((C,R7), TShapeShip), ((C,R9), TShapeShip)
@@ -94,9 +106,9 @@ tshapesGameBoard seed =
       , ((F,R8), TShapeShip), ((F,R9), TShapeShip), ((F,R10),TShapeShip), ((E,R10),TShapeShip), ((G,R10),TShapeShip)
       ]
 
-classicalGameBoard :: Seed -> Board ClassicalGameShip
-classicalGameBoard seed =
-  takeRandom seed $ board1 :| [board2]
+classicalGameBoard :: RandomGen g => g -> Board ClassicalGameShip
+classicalGameBoard gen =
+  takeRandom gen $ board1 :| [board2]
   where
     board1 = BoardMap $ Map.fromList [
         ((B,R8), LengthFourShip),  ((C,R8),LengthFourShip),  ((D,R8),LengthFourShip), ((E,R8),LengthFourShip)
@@ -123,6 +135,8 @@ classicalGameBoard seed =
       , ((F,R8), LengthOneShip)
       ]
 
-takeRandom :: Seed -> NE.NonEmpty a -> a
-takeRandom seed list =
-  head $ NE.drop (seed `mod` NE.length list) list
+takeRandom :: RandomGen g => g -> NE.NonEmpty a -> a
+takeRandom gen list =
+  head $ shuffle' asList (length asList) gen
+  where
+    asList = NE.toList list

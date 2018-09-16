@@ -21,6 +21,8 @@ dependencies:
 - http-api-data
 - http-media
 - mtl
+- random
+- random-shuffle
 - servant
 - servant-server
 - scientific

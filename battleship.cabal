@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 60aec9076e68cccc0b2cc3ef43952fffbb24d8539eb799b5e3ade83935411556
+-- hash: c1400d58923fd0088dd6ff936db372285b7adb955294ee320fe83fede8525b1a
 
 name:           battleship
 version:        0.1.0.0
@@ -28,6 +28,7 @@ library
   exposed-modules:
       ApiTypes
       Bencoding
+      Boards
       Domain
       Interface
       Json
@@ -44,6 +45,8 @@ library
     , http-api-data
     , http-media
     , mtl
+    , random
+    , random-shuffle
     , scientific
     , servant
     , servant-server
@@ -72,6 +75,7 @@ executable battleship
     , http-media
     , mtl
     , random
+    , random-shuffle
     , scientific
     , servant
     , servant-server
@@ -102,6 +106,8 @@ test-suite battleship-test
     , http-api-data
     , http-media
     , mtl
+    , random
+    , random-shuffle
     , scientific
     , servant
     , servant-server

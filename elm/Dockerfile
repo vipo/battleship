@@ -5,7 +5,7 @@ COPY *.elm /root/build/
 WORKDIR /root/build/
 RUN mkdir static-content
 RUN elm-package install --yes elm-lang/http
-RUN elm-make Main.elm --yes --output static-content/index.html
+RUN elm-make BattleShip.elm --yes --output static-content/index.html
 
 FROM nginx
 COPY --from=builder /root/build/static-content/* /usr/share/nginx/html/
