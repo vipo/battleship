@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE StrictData #-}
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE TupleSections #-}
 
 module Domain (
   arbitraryGame, toNestedMoves, Column(..), Row(..), Move(..), Game(..)
@@ -52,18 +53,24 @@ arbitraryGame game seed = do
     randomMoves = shuffle' allCoords (length allCoords)
 
 playAGame :: Int -> (CS, CS) -> ([Coordinates], [Coordinates]) -> Game
-playAGame _ _ ([],_) = error "Empty game"
-playAGame limit (cs1, cs2) (initial:moves1, moves2) =
-  react limit initial (moves2, cs2) (moves1, cs1) (Game initial [])
+playAGame limit (cs1, cs2) (moves1, moves2) = start moves
   where
-    react :: Int -> Coordinates -> ([Coordinates], CS) -> ([Coordinates], CS) -> Game -> Game
-    react 0 _ _ _ acc = acc
-    react _ c ([], b) _ (Game f a) =      Game f (LastReply (result c b):a)
-    react _ _ _ ([], _) _ = error "Illegal state"
-    react l c mine@(_, b) ([m], b2) (Game f a) = react (l-1) m ([],b2) mine $ Game f (ReplyAndAttack m (result c b):a)
-    react l c mine@(_, b) (m:their, b2) (Game f a) = react (l-1) m (their,b2) mine $ Game f (ReplyAndAttack m (result c b):a)
+    moves :: [(CS, Coordinates)]
+    moves = zip (map (cs1,) moves1) (map (cs2,) moves2) >>= (\t -> [fst t, snd t])
+    start :: [(CS, Coordinates)] -> Game
+    start [] = error "Empty game"
+    start ((b,c):t) = react limit (result c b) t (Game c [])
+    react :: Int -> I.MoveResult -> [(CS, Coordinates)] -> Game -> Game
+    react 0 _ _ acc = acc 
+    react _ r [] (Game f a) = Game f (LastReply r : a)
+    react l r ((b,c):t) (Game f a) = react (l-1) (result c b) t (Game f (ReplyAndAttack c r : a))
     result :: Coordinates -> CS -> I.MoveResult
     result c (CS b) = if b `contains` c then I.Hit else I.Miss
+
+hitsPerGame :: I.GameVariation -> Int
+hitsPerGame I.Classical = 20
+hitsPerGame I.Tetris = 20
+hitsPerGame I.TShape = 25
 
 toNestedMoves :: Game -> I.Moves
 toNestedMoves (Game c r) = toNestedMoves' (reverse r) (I.Moves (mapCoord c) Nothing Nothing)
