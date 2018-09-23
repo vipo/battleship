@@ -42,7 +42,7 @@ arbitraryGame game seed = do
   let (gen1, gen2) = split gen
   let css = (boardFor game gen1, boardFor game gen2)
   let moves = (randomMoves gen1, randomMoves gen2)
-  return $ toNestedMoves $ playAGame limit css moves
+  return $ toNestedMoves $ playAGame limit css moves (hitsPerGame game)
   where
     boardFor :: RandomGen g => I.GameVariation -> g -> CS
     boardFor I.Classical = CS . classicalGameBoard
@@ -52,20 +52,30 @@ arbitraryGame game seed = do
     randomMoves :: RandomGen g => g -> [Coordinates]
     randomMoves = shuffle' allCoords (length allCoords)
 
-playAGame :: Int -> (CS, CS) -> ([Coordinates], [Coordinates]) -> Game
-playAGame limit (cs1, cs2) (moves1, moves2) = start moves
+type Hits = (Int, Int)
+type HitDecreaser = Hits -> Hits
+type MoveState = (CS, Coordinates, HitDecreaser)
+
+playAGame :: Int -> (CS, CS) -> ([Coordinates], [Coordinates]) -> Int -> Game
+playAGame limit (cs1, cs2) (moves1, moves2) maxHits = start moves
   where
-    moves :: [(CS, Coordinates)]
-    moves = zip (map (cs1,) moves1) (map (cs2,) moves2) >>= (\t -> [fst t, snd t])
-    start :: [(CS, Coordinates)] -> Game
+    moves :: [MoveState]
+    moves = zip (map (cs1,,\(a,b) -> (a-1,b)) moves1) (map (cs2,,\(a,b) -> (a,b-1)) moves2) >>= (\t -> [fst t, snd t])
+    start :: [MoveState] -> Game
     start [] = error "Empty game"
-    start ((b,c):t) = react limit (result c b) t (Game c [])
-    react :: Int -> I.MoveResult -> [(CS, Coordinates)] -> Game -> Game
-    react 0 _ _ acc = acc 
-    react _ r [] (Game f a) = Game f (LastReply r : a)
-    react l r ((b,c):t) (Game f a) = react (l-1) (result c b) t (Game f (ReplyAndAttack c r : a))
+    start ((b,c,d):t) = react (limit, (maxHits, maxHits)) (result c b, d) t (Game c [])
+    react :: (Int, (Int, Int)) -> (I.MoveResult, HitDecreaser) -> [MoveState] -> Game -> Game
+    react (0,_) _ _ acc = acc
+    react _ (r,_) [] (Game f a) = Game f (LastReply r : a)
+    react (l,h) (r,d) ((b,c,nd):t) (Game f a) =
+      case decHits r h d of
+        (h1,h2) | h1 <= 0 || h2 <= 0 -> Game f (LastReply r : a)
+        nh -> react (l-1, nh) (result c b, nd) t (Game f (ReplyAndAttack c r : a))
     result :: Coordinates -> CS -> I.MoveResult
     result c (CS b) = if b `contains` c then I.Hit else I.Miss
+    decHits :: I.MoveResult -> Hits -> HitDecreaser -> Hits
+    decHits I.Miss h _ = h
+    decHits I.Hit h decreaser = decreaser h
 
 hitsPerGame :: I.GameVariation -> Int
 hitsPerGame I.Classical = 20
@@ -79,6 +89,5 @@ toNestedMoves (Game c r) = toNestedMoves' (reverse r) (I.Moves (mapCoord c) Noth
     toNestedMoves' [] acc = acc
     toNestedMoves' (ReplyAndAttack cor res : t) acc = toNestedMoves' t (I.Moves (mapCoord cor) (Just res) (Just acc))
     toNestedMoves' (LastReply res : _) acc = I.Moves [] (Just res) (Just acc)
-
     mapCoord :: (Column, Row) -> [T.Text]
     mapCoord (c, r) = [cs (show c), cs (show r)]
