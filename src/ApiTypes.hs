@@ -27,6 +27,8 @@ import Servant
 import Servant.API.ContentTypes (Accept)
 import TextShow 
 
+import Data.String.Conversions
+
 import Web.HttpApiData
 
 instance FromHttpApiData I.GameVariation where
@@ -34,6 +36,14 @@ instance FromHttpApiData I.GameVariation where
   parseUrlPiece "tetris" = Right I.Tetris
   parseUrlPiece "t-shapes" = Right I.TShape
   parseUrlPiece a = Left $ T.concat ["Unknown game: ", showt a]
+
+instance FromHttpApiData I.Player where
+  parseUrlPiece "A" = Right I.A
+  parseUrlPiece "B" = Right I.B
+  parseUrlPiece a = Left $ T.concat ["Unknown player: ", showt a]
+
+instance FromHttpApiData I.Game where
+  parseUrlPiece v = Right $ I.Game $ cs v
 
 ct :: BS.ByteString
 ct = "application"
@@ -89,7 +99,7 @@ type API =
     Get  '[JSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves
   :<|> "game" :> "translate" :> ReqBody '[JSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves :>
     Post '[JSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves
-  :<|> "game" :> Capture "gid" String :> "player" :> (
+  :<|> "game" :> Capture "gid" I.Game :> "player" :> Capture "pid" I.Player :> (
       ReqBody '[JSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves :> PostNoContent '[PlainText] NoContent
     :<|> Get '[JSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves
     )

@@ -32,7 +32,7 @@ server = arbitrary :<|> echo :<|> runGame
     arbitrary variation seed = liftIO $ arbitraryGame variation seed
     echo :: Moves -> Handler Moves
     echo = return
-    runGame gid = postMove :<|> getMove
+    runGame gid pid = postMove :<|> getMove
       where
         postMove :: Moves -> Handler NoContent
         postMove moves = return NoContent
