@@ -85,7 +85,11 @@ instance Ben.BEncode a => MimeUnrender BencodingNoMaps a where
   mimeUnrender _ = B.fromWithOutMaps
 
 type API =
-       "game" :> Capture "variation" I.GameVariation :> "arbitrary" :> QueryParam "seed" Int :>
-         Get  '[JSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves
+  "game" :> Capture "variation" I.GameVariation :> "arbitrary" :> QueryParam "seed" Int :>
+    Get  '[JSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves
   :<|> "game" :> "translate" :> ReqBody '[JSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves :>
-         Post '[JSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves
+    Post '[JSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves
+  :<|> "game" :> Capture "gid" String :> "player" :> (
+      ReqBody '[JSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves :> PostNoContent '[PlainText] NoContent
+    :<|> Get '[JSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves
+    )
