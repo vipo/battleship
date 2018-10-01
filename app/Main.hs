@@ -22,11 +22,12 @@ import Network.HTTP.Media (MediaType, (//))
 import Network.Wai.Handler.Warp
 import Servant
 import Servant.API.ContentTypes
+import Data.String.Conversions
 
 import System.IO
 
-server :: Server API
-server = arbitrary :<|> echo :<|> runGame
+server :: Connection -> Server API
+server redis = arbitrary :<|> echo :<|> runGame
   where
     arbitrary :: GameVariation -> Maybe Int -> Handler Moves
     arbitrary variation seed = liftIO $ arbitraryGame variation seed
@@ -35,15 +36,22 @@ server = arbitrary :<|> echo :<|> runGame
     runGame gid pid = postMove :<|> getMove
       where
         postMove :: Moves -> Handler NoContent
-        postMove moves = return NoContent
+        postMove moves = orConflict $ fmap (const NoContent) <$> saveMove redis gid pid moves
         getMove :: Handler Moves
-        getMove = return $ Moves [] Nothing Nothing
+        getMove = orConflict $ fetchMove redis gid pid
+
+orConflict :: IO (Either String a) -> Handler a
+orConflict res = do
+  r <- liftIO res
+  case r of
+    Left msg -> throwError $ err409 {errBody = cs msg}
+    Right a -> return a
 
 api :: Proxy API
 api = Proxy
 
 app :: Connection -> Application
-app redis = serve api server
+app redis = serve api (server redis)
 
 main :: IO ()
 main = do

@@ -4,7 +4,7 @@
 {-# LANGUAGE TupleSections #-}
 
 module Domain (
-  arbitraryGame, toNestedMoves, Column(..), Row(..), Move(..), Game(..)
+  arbitraryGame, toNestedMoves, saveMove, fetchMove, Column(..), Row(..), Move(..), Game(..)
 ) where
 
 import Boards
@@ -17,6 +17,7 @@ import qualified TextShow as TS
 
 import Data.String.Conversions
 import Data.Maybe
+import Database.Redis (Connection)
 
 import System.Random (RandomGen, mkStdGen, getStdGen, split, next)
 import System.Random.Shuffle(shuffle')
@@ -34,6 +35,13 @@ data Move =
 type Seed = Int
 
 data CS = forall a . CoordinatesSet a => CS a
+
+fetchMove :: Connection -> I.GameId -> I.PlayerId -> IO (Either String I.Moves)
+fetchMove redis gid pid = return $ Right $ I.Moves [] Nothing Nothing
+
+saveMove :: Connection -> I.GameId -> I.PlayerId -> I.Moves -> IO (Either String ())
+saveMove redis gid pid moves =
+  return $ Left "fsdf"
 
 arbitraryGame :: I.GameVariation -> Maybe Seed -> IO I.Moves
 arbitraryGame game seed = do

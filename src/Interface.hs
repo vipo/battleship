@@ -8,8 +8,8 @@ module Interface
   , Moves(..)
   , MoveResult(..)
   , GameVariation(..)
-  , Player(..)
-  , Game(..)
+  , PlayerId(..)
+  , GameId(..)
   , withOutLists
   , withOutMaps
   , fromWithOutLists
@@ -36,9 +36,9 @@ import Control.Monad.State
 
 import Type.Reflection
 
-newtype Game = Game String
+newtype GameId = GameId String
 
-data Player = A | B
+data PlayerId = A | B
   deriving Show
 
 data GameVariation
