@@ -5,6 +5,9 @@ import Data.Semigroup
 import qualified Data.List.NonEmpty as NE
 import Data.List.NonEmpty (NonEmpty (..))
 
+import Data.String.Conversions
+import qualified Data.List as L
+
 import Data.Maybe
 import System.Random
 import System.Random.Shuffle(shuffle')
@@ -34,12 +37,16 @@ instance Show TetrisGameShip where
   show TetrisZShip = "Z"
 
 data Column = A | B | C | D | E | F | G | H | I | J
-  deriving (Show, Eq, Ord, Bounded, Enum)
+  deriving (Show, Eq, Ord, Bounded, Enum, Read)
 
 data Row = R1 | R2 | R3 | R4 | R5 | R6 | R7 | R8 | R9 | R10
   deriving (Eq, Ord, Bounded, Enum)
 instance Show Row where
   show r = show (1 + toInteger (fromEnum r))
+instance Read Row where
+  readsPrec _ s@[c] | c `L.elem` ['1'..'9'] = [(toEnum (read s - 1), "")]
+  readsPrec _ "10" = [(R10, "")] 
+  readsPrec _ _ = []
 
 type Coordinates = (Column, Row) 
 

@@ -40,11 +40,12 @@ server redis = arbitrary :<|> echo :<|> runGame
         getMove :: Handler Moves
         getMove = orConflict $ fetchMove redis gid pid
 
-orConflict :: IO (Either String a) -> Handler a
+orConflict :: IO (Either MoveErr a) -> Handler a
 orConflict res = do
   r <- liftIO res
   case r of
-    Left msg -> throwError $ err409 {errBody = cs msg}
+    Left (ContractErr msg) -> throwError $ err409 {errBody = cs msg}
+    Left (ParseErr msg) -> throwError $ err400 {errBody = cs msg}
     Right a -> return a
 
 api :: Proxy API

@@ -56,6 +56,8 @@ common :: TestTree
 common = testGroup "Smoke test" [
   testCase "map domain to interface" $ 
     D.toNestedMoves someGame @?= someGameI,
+  testCase "map interface to domain" $
+    D.fromNestedMoves someGameI @?= Right someGame,
   testCase "renders default json" $
     Aeson.encode someGameI @?= someGameJson,
   testCase "reads default json" $
