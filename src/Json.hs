@@ -16,18 +16,6 @@ import qualified Data.Vector as V
 
 import Interface as I
 
-instance ToJSON MoveResult where
-  toJSON Miss = String "MISS"
-  toJSON Hit = String "HIT"
-
-instance FromJSON MoveResult where
-  parseJSON (String "MISS") = return Miss
-  parseJSON (String "HIT") = return Hit
-  parseJSON invalid = typeMismatch "MoveResult" invalid
-
-instance ToJSON Moves
-instance FromJSON Moves
-
 instance JsonLike Value where
   toJsonLike (Object m) = JLMap $ map (\(k, v) -> (k, toJsonLike v)) (HMS.toList m)
   toJsonLike (Array v) = JLArray $ map toJsonLike $ V.toList v

@@ -37,6 +37,8 @@ import Control.Monad.State
 import Type.Reflection
 
 newtype GameId = GameId String
+instance Show GameId where
+  show (GameId s) = s
 
 data PlayerId = A | B
   deriving Show
@@ -52,11 +54,22 @@ data MoveResult
   | Hit
   deriving (Eq, Show, Gen.Generic, Typeable)
 
+instance A.ToJSON MoveResult where
+  toJSON Miss = A.String "MISS"
+  toJSON Hit = A.String "HIT"
+
+instance A.FromJSON MoveResult where
+  parseJSON (A.String "MISS") = return Miss
+  parseJSON (A.String "HIT") = return Hit
+  parseJSON invalid = A.typeMismatch "MoveResult" invalid
+  
 data Moves = Moves
   { coord :: [Text]
   , result :: Maybe MoveResult
   , prev :: Maybe Moves
   } deriving (Gen.Generic, Show, Eq, Typeable)
+instance A.ToJSON Moves
+instance A.FromJSON Moves
 
 data JsonLikeValue a
   = JLMap [(Text, JsonLikeValue a)]

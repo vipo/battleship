@@ -18,47 +18,82 @@ module Domain
 
 import Boards
 
+import Data.Aeson.Types (FromJSON, ToJSON)
+import qualified Data.Aeson as A
 import qualified GHC.Generics as Gen
 import qualified Interface as I
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as BSL
 
 import qualified Data.Text as T
 import qualified TextShow as TS
 
 import Data.Maybe
 import Data.String.Conversions
-import Database.Redis (Connection)
+import qualified Database.Redis as R
 
 import System.Random (RandomGen, getStdGen, mkStdGen, next, split)
 import System.Random.Shuffle (shuffle')
 
-import qualified Text.Read as R
+import qualified Text.Read as Read
 
 data Game = Game
   { firstAttack :: Coordinates
   , replies :: [Move]
-  } deriving (Show, Eq)
+  } deriving (Gen.Generic, Show, Eq)
+instance FromJSON Game
+instance ToJSON Game
 
 data Move
   = ReplyAndAttack Coordinates
                    I.MoveResult
   | LastReply I.MoveResult
   deriving (Gen.Generic, Show, Eq)
+instance FromJSON Move
+instance ToJSON Move
 
 type Seed = Int
 
-data CS =
-  forall a. CoordinatesSet a =>
-            CS a
+data CS = forall a. CoordinatesSet a => CS a
 
 data MoveErr
   = ContractErr String
   | ParseErr String
+  | SystemErr String
 
-fetchMove :: Connection -> I.GameId -> I.PlayerId -> IO (Either MoveErr I.Moves)
+anotherPlayer :: I.PlayerId -> I.PlayerId
+anotherPlayer I.A = I.B
+anotherPlayer I.B = I.A
+
+mailBox :: I.GameId -> I.PlayerId -> String
+mailBox gid pid = "mailbox:" ++ show gid ++ ":" ++ show pid
+
+fetchMove :: R.Connection -> I.GameId -> I.PlayerId -> IO (Either MoveErr I.Moves)
 fetchMove redis gid pid = return $ Right $ I.Moves [] Nothing Nothing
 
-saveMove :: Connection -> I.GameId -> I.PlayerId -> I.Moves -> IO (Either MoveErr ())
-saveMove redis gid pid moves = return $ Left $ ContractErr "fsdf"
+saveMove :: R.Connection -> I.GameId -> I.PlayerId -> I.Moves -> IO (Either MoveErr ())
+saveMove redis gid pid moves = do
+  rawState <- R.runRedis redis $ R.get stateKey
+  case rawState of
+    Left e -> return $ Left $ SystemErr $ show e
+    Right mbs -> parseState mbs
+  where
+    gameOver = Left $ ContractErr "Game already finished"
+    stateKey = cs $ "state:" ++ show gid
+    parseState (Just bs) =
+      case A.decode $ BSL.fromStrict bs of
+        Just (Game _ (LastReply _:_)) -> return gameOver
+        Just (Game _ rs) | length rs >= 199 -> return gameOver
+        _ -> processRequest
+    parseState Nothing = processRequest
+    processRequest = 
+      case fromNestedMoves moves of
+        Left msg -> return $ Left $ ParseErr msg
+        Right game -> R.runRedis redis $ do
+          let encoded = cs $ A.encode game
+          R.set stateKey encoded
+          R.rpush (cs (mailBox (anotherPlayer gid) pid)) [encoded]
+          return $ Right ()
 
 arbitraryGame :: I.GameVariation -> Maybe Seed -> IO I.Moves
 arbitraryGame game seed = do
@@ -134,8 +169,8 @@ fromNestedMoves m =
       toChain (I.Moves c r Nothing) acc = (c, r) : acc
       readCoords :: [T.Text] -> Either String Coordinates
       readCoords [c1, c2] = do
-        col <- R.readEither (cs c1)
-        row <- R.readEither (cs c2)
+        col <- Read.readEither (cs c1)
+        row <- Read.readEither (cs c2)
         return (col, row)
       readCoords _ = Left "Illegal coordinates"
       firstMove :: [M] -> Either String Game

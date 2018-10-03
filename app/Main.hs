@@ -46,6 +46,7 @@ orConflict res = do
   case r of
     Left (ContractErr msg) -> throwError $ err409 {errBody = cs msg}
     Left (ParseErr msg) -> throwError $ err400 {errBody = cs msg}
+    Left (SystemErr msg) -> throwError $ err500 {errBody = cs msg}
     Right a -> return a
 
 api :: Proxy API

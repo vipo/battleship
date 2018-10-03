@@ -1,6 +1,10 @@
+{-# LANGUAGE DeriveGeneric #-}
 
 module Boards where
 
+import qualified GHC.Generics as Gen
+
+import Data.Aeson.Types (FromJSON, ToJSON)
 import Data.Semigroup
 import qualified Data.List.NonEmpty as NE
 import Data.List.NonEmpty (NonEmpty (..))
@@ -37,10 +41,15 @@ instance Show TetrisGameShip where
   show TetrisZShip = "Z"
 
 data Column = A | B | C | D | E | F | G | H | I | J
-  deriving (Show, Eq, Ord, Bounded, Enum, Read)
+  deriving (Show, Eq, Ord, Bounded, Enum, Read, Gen.Generic)
+instance FromJSON Column
+instance ToJSON Column
 
 data Row = R1 | R2 | R3 | R4 | R5 | R6 | R7 | R8 | R9 | R10
-  deriving (Eq, Ord, Bounded, Enum)
+  deriving (Eq, Ord, Bounded, Enum, Gen.Generic)
+instance FromJSON Row
+instance ToJSON Row
+
 instance Show Row where
   show r = show (1 + toInteger (fromEnum r))
 instance Read Row where
