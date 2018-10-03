@@ -33,12 +33,23 @@ bencode = testGroup "Bencode" [bencodeNoMaps, bencodeNoLists]
 json :: TestTree
 json = testGroup "Json" [jsonNoMaps, jsonNoLists]
 
+finishedGame :: D.Game
+finishedGame = D.Game
+  (D.A, D.R1)
+  [D.LastReply I.Hit,
+    D.ReplyAndAttack (D.C, D.R3) I.Hit,
+    D.ReplyAndAttack (D.B, D.R2) I.Miss
+  ]
+
 someGame :: D.Game
 someGame = D.Game
   (D.A, D.R1)
   [D.ReplyAndAttack (D.C, D.R3) I.Hit,
     D.ReplyAndAttack (D.B, D.R2) I.Miss
   ]
+
+finishedGameI :: I.Moves
+finishedGameI = I.Moves [] (Just I.Hit) $ Just someGameI
 
 someGameI :: I.Moves
 someGameI = I.Moves ["C","3"] (Just I.Hit) $ Just (
@@ -58,6 +69,8 @@ common = testGroup "Smoke test" [
     D.toNestedMoves someGame @?= someGameI,
   testCase "map interface to domain" $
     D.fromNestedMoves someGameI @?= Right someGame,
+  testCase "map interface to domain (finished)" $
+    D.fromNestedMoves finishedGameI @?= Right finishedGame,
   testCase "renders default json" $
     Aeson.encode someGameI @?= someGameJson,
   testCase "reads default json" $
