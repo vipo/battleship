@@ -1,6 +1,11 @@
 module Api exposing (..)
 
-import Json.Decode exposing (Decoder, decodeString, andThen, string, int, list, maybe, succeed, fail, lazy, map3, field)
+import Json.Decode exposing (Decoder, decodeString, andThen, string, int, list, maybe, succeed, fail, lazy, map3, map2, field)
+
+type alias GameStats =
+  { games : List String
+  , moves : Int
+  }
 
 type Moves = Moves
   { coord : Maybe (Char, Int) -- (col, row)
@@ -69,3 +74,9 @@ decodeMoves =
       (field "coord" decodeCoord)
       (field "result" (maybe decodeMoveResult))
       (field "prev" (maybe (lazy(\_ -> decodeMoves))))
+
+decodeGameStats : Decoder GameStats
+decodeGameStats =
+  map2 GameStats
+    (field "games" (list string))
+    (field "moves" int)

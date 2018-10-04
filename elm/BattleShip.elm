@@ -7,7 +7,7 @@ import Http
 
 import Dict
 
-import Api exposing (Moves, decodeMoves)
+import Api exposing (Moves, GameStats, decodeMoves, decodeGameStats)
 
 main : Program Never Model Msg
 main = Html.program {
@@ -39,13 +39,15 @@ type alias Model = {
   , msgType : MsgType
   , seed : Int
   , errors : List (String)
+  , games : List String
+  , moves : Int
 }
 
 emptyBoard : Board
 emptyBoard =  Dict.empty
 
 init : (Model, Cmd Msg)
-init = (Model emptyBoard emptyBoard "" Classical Json 0 [], genSeed)
+init = (Model emptyBoard emptyBoard "" Classical Json 0 [] [] 0, genSeed)
 
 -- UPDATE
 
@@ -55,6 +57,7 @@ type Msg = SwitchMsgType MsgType |
   NewSeed Int |
   SetRaw (Result Http.Error String) |
   SetBoards (Result Http.Error Api.Moves) |
+  LoadStats (Result Http.Error Api.GameStats) |
   SaveRaw String |
   RenderRaw
 
@@ -77,7 +80,8 @@ update msg model =
         (newModel, Cmd.batch
           [
             Http.send SetRaw    (getRawContent newModel.msgType newModel.gameType newModel.seed Http.expectString),
-            Http.send SetBoards (getRawContent Json             newModel.gameType newModel.seed (Http.expectJson Api.decodeMoves))
+            Http.send SetBoards (getRawContent Json             newModel.gameType newModel.seed (Http.expectJson Api.decodeMoves)),
+            Http.send LoadStats getGameStats
           ]
         )
     SetRaw result ->
@@ -92,6 +96,10 @@ update msg model =
       ({ model | rawMessage = String.trim str}, Cmd.none)
     RenderRaw ->
       (model, Http.send SetBoards (transformContent (model.msgType, model.rawMessage) (Json ,(Http.expectJson Api.decodeMoves))))
+    LoadStats result ->
+      case result of
+        Err m -> ({ model | errors = toString m :: model.errors}, Cmd.none)
+        Ok m -> ({ model | games = m.games, moves = m.moves}, Cmd.none)
 
 applyMoves : Model -> Moves -> Model
 applyMoves model moves =
@@ -136,6 +144,18 @@ gameTypeToUrl gameType =
     Classical -> "classical"
     Tetris ->    "tetris"
     TShapes ->   "t-shapes"
+
+getGameStats : Http.Request GameStats
+getGameStats =
+  Http.request { 
+      method = "GET"
+    , headers = [Http.header "Accept" "application/json"]
+    , url = "/game"
+    , body = Http.emptyBody
+    , expect = Http.expectJson Api.decodeGameStats
+    , timeout = Nothing
+    , withCredentials = False
+    }
 
 getRawContent : MsgType -> GameType -> Int -> Http.Expect a -> Http.Request a
 getRawContent msgType gameType seed expect =
