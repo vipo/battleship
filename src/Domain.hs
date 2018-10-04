@@ -2,6 +2,7 @@
 {-# LANGUAGE StrictData #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Domain
   ( arbitraryGame
@@ -9,6 +10,7 @@ module Domain
   , fromNestedMoves
   , saveMove
   , fetchMove
+  , getStats
   , MoveErr(..)
   , Column(..)
   , Row(..)
@@ -25,6 +27,7 @@ import qualified Interface as I
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
 
+import Data.Either
 import qualified Data.Text as T
 import qualified TextShow as TS
 
@@ -64,12 +67,30 @@ anotherPlayer :: I.PlayerId -> I.PlayerId
 anotherPlayer I.A = I.B
 anotherPlayer I.B = I.A
 
-mailBox :: I.GameId -> I.PlayerId -> String
-mailBox gid pid = "mailbox:" ++ show gid ++ ":" ++ show pid
+mailBox :: I.GameId -> I.PlayerId -> BS.ByteString
+mailBox gid pid = cs $ "mailbox:" ++ show gid ++ ":" ++ show pid
+
+counterKey :: BS.ByteString
+counterKey = "counter"
+
+gamesKey :: BS.ByteString
+gamesKey = "games"
+
+getStats :: R.Connection -> IO I.GameStats
+getStats redis = R.runRedis redis $ do
+  c <- R.get counterKey
+  let counter =
+        case c of
+          Right (Just v) -> read $ cs v
+          _ -> 0 :: Integer
+  range <- R.zrevrangebyscoreLimit gamesKey (fromIntegral counter) (fromIntegral (0 :: Integer)) 0 100
+  case range of
+    Left _ -> return $ I.GameStats [] 0
+    Right r -> return $ I.GameStats (map (I.GameId . cs) r) counter
 
 fetchMove :: R.Connection -> I.GameId -> I.PlayerId -> IO (Either MoveErr I.Moves)
 fetchMove redis gid pid = do
-  v <- R.runRedis redis $ R.blpop [cs (mailBox gid pid)] 8
+  v <- R.runRedis redis $ R.blpop [mailBox gid pid] 8
   case v of
     Right (Just (_, bs)) -> return $ readMoves bs
     _ -> return $ Left $ ContractErr "No move available at the moment"
@@ -101,6 +122,8 @@ saveMove redis gid pid moves = do
           let encoded = cs $ A.encode game
           R.set stateKey encoded
           R.rpush (cs (mailBox gid (anotherPlayer pid))) [encoded]
+          counterValue <- R.incr counterKey
+          R.zadd gamesKey [(fromIntegral $ fromRight 0 counterValue, cs $ show gid)]
           return $ Right ()
 
 arbitraryGame :: I.GameVariation -> Maybe Seed -> IO I.Moves

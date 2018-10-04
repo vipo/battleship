@@ -10,6 +10,7 @@ module Interface
   , GameVariation(..)
   , PlayerId(..)
   , GameId(..)
+  , GameStats(..)
   , withOutLists
   , withOutMaps
   , fromWithOutLists
@@ -36,9 +37,17 @@ import Control.Monad.State
 
 import Type.Reflection
 
+data GameStats = GameStats
+  { games :: [GameId]
+  , moves :: Integer 
+  } deriving (Gen.Generic, Show)
+instance A.ToJSON GameStats
+
 newtype GameId = GameId String
+  deriving Gen.Generic
 instance Show GameId where
   show (GameId s) = s
+instance A.ToJSON GameId
 
 data PlayerId = A | B
   deriving Show

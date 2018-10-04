@@ -27,12 +27,14 @@ import Data.String.Conversions
 import System.IO
 
 server :: Connection -> Server API
-server redis = arbitrary :<|> echo :<|> runGame
+server redis = arbitrary :<|> echo :<|> listGames :<|> runGame
   where
     arbitrary :: GameVariation -> Maybe Int -> Handler Moves
     arbitrary variation seed = liftIO $ arbitraryGame variation seed
     echo :: Moves -> Handler Moves
     echo = return
+    listGames :: Handler GameStats
+    listGames = liftIO $ getStats redis
     runGame gid pid = postMove :<|> getMove
       where
         postMove :: Moves -> Handler NoContent
