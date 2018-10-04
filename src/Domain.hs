@@ -45,8 +45,7 @@ instance FromJSON Game
 instance ToJSON Game
 
 data Move
-  = ReplyAndAttack Coordinates
-                   I.MoveResult
+  = ReplyAndAttack Coordinates I.MoveResult
   | LastReply I.MoveResult
   deriving (Gen.Generic, Show, Eq)
 instance FromJSON Move
@@ -69,7 +68,16 @@ mailBox :: I.GameId -> I.PlayerId -> String
 mailBox gid pid = "mailbox:" ++ show gid ++ ":" ++ show pid
 
 fetchMove :: R.Connection -> I.GameId -> I.PlayerId -> IO (Either MoveErr I.Moves)
-fetchMove redis gid pid = return $ Right $ I.Moves [] Nothing Nothing
+fetchMove redis gid pid = do
+  v <- R.runRedis redis $ R.blpop [cs (mailBox gid pid)] 8
+  case v of
+    Right (Just (_, bs)) -> return $ readMoves bs
+    _ -> return $ Left $ ContractErr "No move available at the moment"
+  where
+    readMoves bs =
+      case A.decode $ BSL.fromStrict bs of
+        Just g -> Right $ toNestedMoves g
+        _ -> Left $ SystemErr "Could not parse mailbox content"
 
 saveMove :: R.Connection -> I.GameId -> I.PlayerId -> I.Moves -> IO (Either MoveErr ())
 saveMove redis gid pid moves = do
@@ -92,7 +100,7 @@ saveMove redis gid pid moves = do
         Right game -> R.runRedis redis $ do
           let encoded = cs $ A.encode game
           R.set stateKey encoded
-          R.rpush (cs (mailBox (anotherPlayer gid) pid)) [encoded]
+          R.rpush (cs (mailBox gid (anotherPlayer pid))) [encoded]
           return $ Right ()
 
 arbitraryGame :: I.GameVariation -> Maybe Seed -> IO I.Moves
