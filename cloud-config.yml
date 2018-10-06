@@ -1,9 +1,29 @@
 #cloud-config
 
+write_files:
+  - path: /var/docker/volumes/redis/keep
+
 coreos:
   update:
     reboot-strategy: "reboot"
   units:
+    - name: redis.service
+      command: start
+      enable: true
+      content: |
+        [Unit]
+        Description=Redis
+        After=docker.service
+        Requires=docker.service
+        [Service]
+        TimeoutStartSec=0
+        ExecStartPre=-/usr/bin/docker kill redis
+        ExecStartPre=-/usr/bin/docker rm redis
+        ExecStartPre=/usr/bin/docker pull redis:4-alpine
+        ExecStart=/usr/bin/docker run --name redis -v /var/docker/volumes/redis:/data redis:4-alpine redis-server --appendonly yes
+        ExecStop=/usr/bin/docker kill redis
+        [Install]
+        WantedBy=multi-user.target
     - name: battleship.service
       command: start
       enable: true
@@ -11,14 +31,16 @@ coreos:
         [Unit]
         Description=Battleship
         After=docker.service
+        After=redis.service
         Requires=docker.service
+        Requires=redis.service
 
         [Service]
         TimeoutStartSec=0
         ExecStartPre=-/usr/bin/docker kill battleship
         ExecStartPre=-/usr/bin/docker rm battleship
         ExecStartPre=/usr/bin/docker pull vipo/battleship:latest
-        ExecStart=/usr/bin/docker run --name battleship -p 8080:8080 vipo/battleship:latest battleship
+        ExecStart=/usr/bin/docker run --name battleship -p 8080:8080 --link redis:redis vipo/battleship:latest battleship
 
         ExecStop=/usr/bin/docker kill battleship
 

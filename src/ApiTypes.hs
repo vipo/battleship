@@ -45,6 +45,11 @@ instance FromHttpApiData I.PlayerId where
 instance FromHttpApiData I.GameId where
   parseUrlPiece v = Right $ I.GameId $ cs v
 
+instance FromHttpApiData I.GamePage where
+  parseUrlPiece v = case (parseUrlPiece v :: Either T.Text Int) of
+    Left e -> Left e
+    Right i -> if i >=0 then Right (I.GamePage i) else Left $ cs $ "negative page" ++ show i
+
 ct :: BS.ByteString
 ct = "application"
 
@@ -100,6 +105,7 @@ type API =
   :<|> "game" :> "translate" :> ReqBody '[JSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves :>
     Post '[JSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves
   :<|> "game" :> Get '[JSON] I.GameStats
+  :<|> "game" :> Capture "gid" I.GameId :> Capture "page" I.GamePage :> Get '[JSON] I.Moves
   :<|> "game" :> Capture "gid" I.GameId :> "player" :> Capture "pid" I.PlayerId :> (
       ReqBody '[JSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves :> PostNoContent '[PlainText] NoContent
     :<|> Get '[JSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves

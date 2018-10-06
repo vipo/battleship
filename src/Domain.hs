@@ -11,6 +11,7 @@ module Domain
   , saveMove
   , fetchMove
   , getStats
+  , getGamePage
   , MoveErr(..)
   , Column(..)
   , Row(..)
@@ -76,6 +77,16 @@ counterKey = "counter"
 gamesKey :: BS.ByteString
 gamesKey = "games"
 
+historyKey :: I.GameId -> BS.ByteString
+historyKey gid = cs $ "history:" ++ show gid
+
+getGamePage :: R.Connection -> I.GameId -> I.GamePage -> IO (Maybe I.Moves)
+getGamePage redis gid (I.GamePage page) = R.runRedis redis $ do
+  els <- R.lrange (historyKey gid) (toInteger page) (toInteger page)
+  return $ case els of
+    Right [bs] -> toNestedMoves <$> A.decode (BSL.fromStrict bs)
+    _ -> Nothing
+
 getStats :: R.Connection -> IO I.GameStats
 getStats redis = R.runRedis redis $ do
   c <- R.get counterKey
@@ -83,14 +94,14 @@ getStats redis = R.runRedis redis $ do
         case c of
           Right (Just v) -> read $ cs v
           _ -> 0 :: Integer
-  range <- R.zrevrangebyscoreLimit gamesKey (fromIntegral counter) (fromIntegral (0 :: Integer)) 0 100
+  range <- R.zrevrangebyscoreLimit gamesKey (fromIntegral counter) 0.0 0 42
   case range of
     Left _ -> return $ I.GameStats [] 0
     Right r -> return $ I.GameStats (map (I.GameId . cs) r) counter
 
 fetchMove :: R.Connection -> I.GameId -> I.PlayerId -> IO (Either MoveErr I.Moves)
 fetchMove redis gid pid = do
-  v <- R.runRedis redis $ R.blpop [mailBox gid pid] 8
+  v <- R.runRedis redis $ R.blpop [mailBox gid pid] 5
   case v of
     Right (Just (_, bs)) -> return $ readMoves bs
     _ -> return $ Left $ ContractErr "No move available at the moment"
@@ -120,10 +131,11 @@ saveMove redis gid pid moves = do
         Left msg -> return $ Left $ ParseErr msg
         Right game -> R.runRedis redis $ do
           let encoded = cs $ A.encode game
-          R.set stateKey encoded
-          R.rpush (cs (mailBox gid (anotherPlayer pid))) [encoded]
+          _ <- R.set stateKey encoded
           counterValue <- R.incr counterKey
-          R.zadd gamesKey [(fromIntegral $ fromRight 0 counterValue, cs $ show gid)]
+          _ <- R.zadd gamesKey [(fromIntegral $ fromRight 0 counterValue, cs $ show gid)]
+          _ <- R.rpush (historyKey gid) [encoded]
+          _ <- R.rpush (cs (mailBox gid (anotherPlayer pid))) [encoded]
           return $ Right ()
 
 arbitraryGame :: I.GameVariation -> Maybe Seed -> IO I.Moves

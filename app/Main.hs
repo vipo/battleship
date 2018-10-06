@@ -5,6 +5,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE StrictData #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Main where
 
@@ -27,18 +28,24 @@ import Data.String.Conversions
 import System.IO
 
 server :: Connection -> Server API
-server redis = arbitrary :<|> echo :<|> listGames :<|> runGame
+server redis = arbitrary :<|> echo :<|> listGames :<|> gamePage :<|> runGame
   where
     arbitrary :: GameVariation -> Maybe Int -> Handler Moves
     arbitrary variation seed = liftIO $ arbitraryGame variation seed
     echo :: Moves -> Handler Moves
     echo = return
+    gamePage :: GameId -> GamePage -> Handler Moves
+    gamePage gid page = do
+      r <- liftIO $ getGamePage redis gid page
+      case r of
+        Just v -> return v
+        Nothing -> throwError $ err404 {errBody = "Not found"}
     listGames :: Handler GameStats
     listGames = liftIO $ getStats redis
     runGame gid pid = postMove :<|> getMove
       where
         postMove :: Moves -> Handler NoContent
-        postMove moves = orConflict $ fmap (const NoContent) <$> saveMove redis gid pid moves
+        postMove ms = orConflict $ fmap (const NoContent) <$> saveMove redis gid pid ms
         getMove :: Handler Moves
         getMove = orConflict $ fetchMove redis gid pid
 

@@ -1,6 +1,6 @@
 import Html exposing (Html, Attribute, button, div, span, text, h2, table, tr,
-  td, caption, textarea, label, input, fieldset, section)
-import Html.Attributes exposing(style, readonly, cols, rows, type_, checked, value)
+  td, caption, textarea, label, input, fieldset, section, ol, li, a)
+import Html.Attributes exposing(style, readonly, cols, rows, type_, checked, value, href)
 import Html.Events exposing (onClick, onInput)
 import Random
 import Http
@@ -258,6 +258,10 @@ view model =
         span [] [text ("Seed: " ++ toString model.seed)]
         ]
       , button [ onClick GenGame ] [ text "Generate" ]
+      ]
+      , h2 [] [text ("Latest " ++ (List.length model.games |> toString) ++ " games ("++ toString model.moves ++ " moves performed in total):")]
+      , div [] [
+         ol [] (List.map (\g -> li [] [a [ href ("/game/" ++ g ++ "/0") ] [ text g ]]) model.games)
       ]
     ]
 

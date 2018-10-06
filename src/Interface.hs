@@ -11,6 +11,7 @@ module Interface
   , PlayerId(..)
   , GameId(..)
   , GameStats(..)
+  , GamePage(..)
   , withOutLists
   , withOutMaps
   , fromWithOutLists
@@ -50,6 +51,9 @@ instance Show GameId where
 instance A.ToJSON GameId
 
 data PlayerId = A | B
+  deriving Show
+
+newtype GamePage = GamePage Int
   deriving Show
 
 data GameVariation
