@@ -1,5 +1,10 @@
-resolver: lts-14.3
+resolver: lts-12.2
 
 packages:
 - .
+- bencoding
 
+image:
+  container:
+    name: vipo/battleship
+    base: vipo/stack-run
