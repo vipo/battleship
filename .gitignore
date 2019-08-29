@@ -1,5 +1,6 @@
 .stack-work/
 .vscode/
+dist/
 elm/elm-package.json
 elm/elm-stuff/
 static/index.html
