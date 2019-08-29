@@ -3,4 +3,5 @@
 dist/
 elm/elm-package.json
 elm/elm-stuff/
+elm/node_modules/
 static/index.html
