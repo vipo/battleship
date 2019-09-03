@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE StrictData #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -53,8 +52,8 @@ instance BEncode Moves where
         Just v -> fromBEncode v
       coordValue :: BValue -> Result T.Text
       coordValue (BString s) = Right $ cs s
-      coordValue a = decodingError $ "value not expected: " ++ show a 
-  
+      coordValue a = decodingError $ "value not expected: " ++ show a
+
 instance JsonLike BValue where
   toJsonLike (BDict m) = JLMap $ map (\(k, v) -> (cs k, toJsonLike v)) (BDict.toAscList m)
   toJsonLike (BList v) = JLArray $ map toJsonLike v
@@ -77,10 +76,10 @@ transform :: BEncode a
   -> BSL.ByteString
   -> Either String a
 transform transformer v = do
-  val <- BenI.parse (BSL.toStrict v) 
+  val <- BenI.parse (BSL.toStrict v)
   transformed <- transformer (toJsonLike val)
   fromBEncode transformed
-  
+
 fromWithOutLists :: BEncode a => BSL.ByteString -> Either String a
 fromWithOutLists = transform (I.fromWithOutLists >=> return . fromJsonLike)
 

@@ -26,6 +26,7 @@ import Servant.API.ContentTypes
 import Data.String.Conversions
 
 import System.IO
+import System.Environment(getEnv)
 
 server :: Connection -> Server API
 server redis = arbitrary :<|> echo :<|> listGames :<|> gamePage :<|> runGame
@@ -68,7 +69,12 @@ main :: IO ()
 main = do
   hSetBuffering stdout LineBuffering
   bracket
-    (checkedConnect defaultConnectInfo {connectHost = "redis"})
+    (do
+      redisHost <- getEnv "REDIS_HOST"
+      let connInfo = defaultConnectInfo {connectHost = redisHost}
+      conn <- checkedConnect connInfo
+      putStrLn $ "Connected to: " ++ show connInfo
+      return conn)
     (\_ -> return ())
     (\redis -> do
        putStrLn $ "Starting on port " ++ show port
