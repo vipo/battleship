@@ -1,0 +1,3 @@
+[submodule "bencoding"]
+        path = bencoding
+        url = git@github.com:vipo/bencoding.git
