@@ -15,18 +15,15 @@ import Interface
 
 import Control.Exception (bracket)
 import Control.Monad.IO.Class
+import Data.Maybe (fromMaybe)
 import Database.Redis (Connection, checkedConnect, connectHost, defaultConnectInfo)
 
-import GHC.Generics
-import GHC.TypeLits
-import Network.HTTP.Media (MediaType, (//))
 import Network.Wai.Handler.Warp
 import Servant
-import Servant.API.ContentTypes
 import Data.String.Conversions
 
 import System.IO
-import System.Environment(getEnv)
+import System.Environment(lookupEnv)
 
 server :: Connection -> Server API
 server redis = arbitrary :<|> echo :<|> listGames :<|> gamePage :<|> runGame
@@ -70,7 +67,7 @@ main = do
   hSetBuffering stdout LineBuffering
   bracket
     (do
-      redisHost <- getEnv "REDIS_HOST"
+      redisHost <- fromMaybe "redis" <$> lookupEnv "REDIS_HOST"
       let connInfo = defaultConnectInfo {connectHost = redisHost}
       conn <- checkedConnect connInfo
       putStrLn $ "Connected to: " ++ show connInfo

@@ -5,11 +5,9 @@ module Boards where
 import qualified GHC.Generics as Gen
 
 import Data.Aeson.Types (FromJSON, ToJSON)
-import Data.Semigroup
 import qualified Data.List.NonEmpty as NE
 import Data.List.NonEmpty (NonEmpty (..))
 
-import Data.String.Conversions
 import qualified Data.List as L
 
 import Data.Maybe

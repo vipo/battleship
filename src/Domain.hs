@@ -30,9 +30,7 @@ import qualified Data.ByteString.Lazy as BSL
 
 import Data.Either
 import qualified Data.Text as T
-import qualified TextShow as TS
 
-import Data.Maybe
 import Data.String.Conversions
 import qualified Database.Redis as R
 
@@ -227,5 +225,5 @@ fromNestedMoves m =
         cr <- readCoords c
         otherMoves ms $ Game a (ReplyAndAttack cr r : b)
       otherMoves [] acc = Right acc
-      otherMoves m _ = Left $ "Illegal move: " ++ show m
+      otherMoves o _ = Left $ "Illegal move: " ++ show o
    in firstMove $ toChain m []
