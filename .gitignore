@@ -4,3 +4,4 @@ dist/
 elm/elm-package.json
 elm/elm-stuff/
 static/index.html
+bins/

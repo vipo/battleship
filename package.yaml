@@ -39,6 +39,7 @@ library:
   - -Wall
   - -Werror
   - -fwarn-incomplete-uni-patterns
+  - -static
 
 executables:
   battleship:
@@ -51,6 +52,8 @@ executables:
     - -Wall
     - -Werror
     - -fwarn-incomplete-uni-patterns
+    - -O2
+    - -static
     dependencies:
     - battleship
     - random
@@ -66,6 +69,7 @@ tests:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    - -static
     dependencies:
     - battleship
     - tasty

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ca1af002f3c39442f174f1ab9420e539e76400173bd6c46b35219749877cdbdc
+-- hash: 9da095cda9f45201d5e6bf2119243c57ff6236127e220bf41da56f70eeed58e5
 
 name:           battleship
 version:        0.1.0.0
@@ -35,7 +35,7 @@ library
       Paths_battleship
   hs-source-dirs:
       src
-  ghc-options: -Wall -Werror -fwarn-incomplete-uni-patterns
+  ghc-options: -Wall -Werror -fwarn-incomplete-uni-patterns -static
   build-depends:
       aeson
     , base >=4.7 && <5
@@ -64,7 +64,7 @@ executable battleship
       Paths_battleship
   hs-source-dirs:
       app
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Werror -fwarn-incomplete-uni-patterns
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Werror -fwarn-incomplete-uni-patterns -O2 -static
   build-depends:
       aeson
     , base >=4.7 && <5
@@ -97,7 +97,7 @@ test-suite battleship-test
       Paths_battleship
   hs-source-dirs:
       test
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -static
   build-depends:
       aeson
     , base >=4.7 && <5
