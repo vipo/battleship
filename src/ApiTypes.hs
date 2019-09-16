@@ -99,14 +99,14 @@ instance I.ToJsonLike a => MimeRender BencodingNoMaps a where
 instance I.FromJsonLike a => MimeUnrender BencodingNoMaps a where
   mimeUnrender _ bs = Ben.decode (BLS.toStrict bs) >>= I.fromWithOutMaps >>= I.fromJsonLike
 
+type ContentTypes = '[MyJSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps]
+
 type API =
-  "game" :> Capture "variation" I.GameVariation :> "arbitrary" :> QueryParam "seed" Int :>
-    Get  '[MyJSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves
-  :<|> "game" :> "translate" :> ReqBody '[JSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves :>
-    Post '[MyJSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves
+       "game" :> Capture "variation" I.GameVariation :> "arbitrary" :> QueryParam "seed" Int :> Get ContentTypes I.Moves
+  :<|> "game" :> "translate" :> ReqBody ContentTypes I.Moves :> Post ContentTypes I.Moves
   :<|> "game" :> Get '[JSON] I.GameStats
   :<|> "game" :> Capture "gid" I.GameId :> Capture "page" I.GamePage :> Get '[JSON] I.Moves
   :<|> "game" :> Capture "gid" I.GameId :> "player" :> Capture "pid" I.PlayerId :> (
-      ReqBody '[MyJSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves :> PostNoContent '[PlainText] NoContent
-    :<|> Get  '[MyJSON, JSONNoLists, JSONNoMaps, Bencoding, BencodingNoLists, BencodingNoMaps] I.Moves
+           ReqBody ContentTypes I.Moves :> PostNoContent '[PlainText] NoContent 
+      :<|> Get ContentTypes I.Moves
     )
