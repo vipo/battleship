@@ -72,8 +72,8 @@ decodeMoves =
   in
     map3 cons
       (field "coord" decodeCoord)
-      (field "result" (maybe decodeMoveResult))
-      (field "prev" (maybe (lazy(\_ -> decodeMoves))))
+      (maybe (field "result" decodeMoveResult))
+      (maybe (field "prev" (lazy (\_ -> decodeMoves) )))
 
 decodeGameStats : Decoder GameStats
 decodeGameStats =
