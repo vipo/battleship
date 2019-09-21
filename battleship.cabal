@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 9da095cda9f45201d5e6bf2119243c57ff6236127e220bf41da56f70eeed58e5
+-- hash: 62f7d632d9d2901ef9aab7cfec5f376f7868f41f2dd5a719a717450611496217
 
 name:           battleship
 version:        0.1.0.0
@@ -42,6 +42,7 @@ library
     , bencoding
     , bytestring
     , containers
+    , hashable
     , hedis
     , http-api-data
     , http-media
@@ -72,6 +73,7 @@ executable battleship
     , bencoding
     , bytestring
     , containers
+    , hashable
     , hedis
     , http-api-data
     , http-media
@@ -105,6 +107,7 @@ test-suite battleship-test
     , bencoding
     , bytestring
     , containers
+    , hashable
     , hedis
     , http-api-data
     , http-media

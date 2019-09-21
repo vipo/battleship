@@ -46,7 +46,7 @@ ct :: BS.ByteString
 ct = "application"
 
 bencMt :: BS.ByteString -> MediaType
-bencMt suff = ct // BS.concat ["bencoding", suff]
+bencMt suff = ct // BS.concat ["relaxed-bencoding", suff]
 
 jsonMt :: BS.ByteString -> MediaType
 jsonMt suff = ct // BS.concat ["json", suff]
@@ -55,7 +55,7 @@ data MyJSON
 instance Accept MyJSON where
   contentType _ = jsonMt ""
 instance I.ToJsonLike a => MimeRender MyJSON a where
-  mimeRender _ = A.encode . I.toJsonLike
+  mimeRender _ = A.encode . I.mix . I.toJsonLike
 instance I.FromJsonLike a => MimeUnrender MyJSON a where
   mimeUnrender _ bs = A.eitherDecode' bs >>= I.fromJsonLike
 
@@ -63,7 +63,7 @@ data JSONNoLists
 instance Accept JSONNoLists where
   contentType _ = jsonMt "+nolists"
 instance I.ToJsonLike a => MimeRender JSONNoLists a where
-  mimeRender _ = A.encode . I.withOutLists . I.toJsonLike
+  mimeRender _ = A.encode . I.withOutLists . I.mix . I.toJsonLike
 instance I.FromJsonLike a => MimeUnrender JSONNoLists a where
   mimeUnrender _ bs = A.eitherDecode' bs >>= I.fromWithOutLists >>= I.fromJsonLike
 
@@ -71,7 +71,7 @@ data JSONNoMaps
 instance Accept JSONNoMaps where
   contentType _ = jsonMt "+nomaps"
 instance I.ToJsonLike a => MimeRender JSONNoMaps a where
-  mimeRender _ = A.encode . I.withOutMaps . I.toJsonLike
+  mimeRender _ = A.encode . I.withOutMaps . I.mix . I.toJsonLike
 instance I.FromJsonLike a => MimeUnrender JSONNoMaps a where
   mimeUnrender _ bs = A.eitherDecode' bs >>= I.fromWithOutMaps >>= I.fromJsonLike
 
@@ -79,7 +79,7 @@ data Bencoding
 instance Accept Bencoding where
   contentType _ = bencMt ""
 instance I.ToJsonLike a => MimeRender Bencoding a where
-  mimeRender _ = Ben.encode . I.toJsonLike
+  mimeRender _ = Ben.encode . I.mix . I.toJsonLike
 instance I.FromJsonLike a => MimeUnrender Bencoding a where
   mimeUnrender _ bs = Ben.decode (BLS.toStrict bs) >>= I.fromJsonLike
 
@@ -87,7 +87,7 @@ data BencodingNoLists
 instance Accept BencodingNoLists where
   contentType _ = bencMt "+nolists"
 instance I.ToJsonLike a => MimeRender BencodingNoLists a where
-  mimeRender _ = Ben.encode . I.withOutLists . I.toJsonLike
+  mimeRender _ = Ben.encode . I.withOutLists . I.mix . I.toJsonLike
 instance I.FromJsonLike a => MimeUnrender BencodingNoLists a where
   mimeUnrender _ bs = Ben.decode (BLS.toStrict bs) >>= I.fromWithOutLists >>= I.fromJsonLike
 
@@ -95,7 +95,7 @@ data BencodingNoMaps
 instance Accept BencodingNoMaps where
   contentType _ = bencMt "+nomaps"
 instance I.ToJsonLike a => MimeRender BencodingNoMaps a where
-  mimeRender _ = Ben.encode . I.withOutMaps . I.toJsonLike
+  mimeRender _ = Ben.encode . I.withOutMaps . I.mix . I.toJsonLike
 instance I.FromJsonLike a => MimeUnrender BencodingNoMaps a where
   mimeUnrender _ bs = Ben.decode (BLS.toStrict bs) >>= I.fromWithOutMaps >>= I.fromJsonLike
 

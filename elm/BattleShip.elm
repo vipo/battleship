@@ -134,9 +134,9 @@ msgTypeToContentType msgType =
     Json ->        "application/json"
     JsonNoLists -> "application/json+nolists"
     JsonNoMaps ->  "application/json+nomaps"
-    Bencoding ->        "application/bencoding"
-    BencodingNoLists -> "application/bencoding+nolists"
-    BencodingNoMaps ->  "application/bencoding+nomaps"
+    Bencoding ->        "application/relaxed-bencoding"
+    BencodingNoLists -> "application/relaxed-bencoding+nolists"
+    BencodingNoMaps ->  "application/relaxed-bencoding+nomaps"
 
 gameTypeToUrl : GameType -> String
 gameTypeToUrl gameType =

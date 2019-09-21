@@ -19,6 +19,7 @@ module Interface
   , withOutMaps
   , fromWithOutLists
   , fromWithOutMaps
+  , mix
   ) where
 
 import qualified Data.Aeson.Types as A
@@ -29,6 +30,7 @@ import           Data.BEncode
 import qualified Data.BEncode.BDict as BDict
 
 import qualified Data.HashMap.Strict as HMS
+import qualified Data.Hashable as Hash
 import qualified Data.Vector as V
 
 import qualified Data.List as L
@@ -42,7 +44,8 @@ import qualified TextShow as TS
 
 import           Control.Monad.Except
 import           Control.Monad.State
-
+import           System.Random as Rand
+import           System.Random.Shuffle as Shuffle
 import           Type.Reflection
 import           Data.String.Conversions
 
@@ -100,6 +103,8 @@ data JsonLikeValue
   | JLArray [JsonLikeValue]
   | JLString Text
   deriving (Gen.Generic, Show, Eq, Typeable)
+
+instance Hash.Hashable JsonLikeValue
 
 instance BEncode JsonLikeValue where
   toBEncode (JLString t) = BString (cs t)
@@ -186,6 +191,13 @@ instance ToJsonLike Moves where
     [ ("coord", toJsonLike coord) ] ++
     M.maybeToList (fmap (\v -> ("result", toJsonLike v)) result) ++
     M.maybeToList (fmap (\v -> ("prev",   toJsonLike v)) prev)
+
+mix :: JsonLikeValue -> JsonLikeValue
+mix a@(JLMap m) = JLMap $ L.map (\(k, v) -> (k, mix v)) $ shuffleList (Rand.mkStdGen (Hash.hash a)) m
+mix a = a 
+
+shuffleList :: Rand.RandomGen r => r -> [a] -> [a]
+shuffleList rnd l = Shuffle.shuffle' l (L.length l) rnd
 
 lexOrdered :: Int -> [T.Text]
 lexOrdered a = L.sort $ L.map TS.showt [1 .. a]

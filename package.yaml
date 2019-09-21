@@ -18,6 +18,7 @@ dependencies:
 - bencoding
 - bytestring
 - containers
+- hashable
 - http-api-data
 - http-media
 - mtl
